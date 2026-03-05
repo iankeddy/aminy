@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Aminy Marketplace - Find Helpers</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    
+    </head>
+<body class="app-market">
+
+<!-- APP HEADER -->
+<header class="app-header">
+  <!-- LEFT: MENU -->
+  <button class="icon-btn" onclick="toggleAppMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- CENTER: LOGO -->
+  <div class="app-logo" onclick="goToPage('index.html')">
+    <img src="images/aminy-logo.png" alt="Aminy Logo">
+  </div>
+
+  <!-- RIGHT: PROFILE -->
+  <button class="icon-btn" onclick="handleProfileClick()">
+    <i class="fas fa-user-circle"></i>
+  </button>
+</header>
+
+<!-- APP DRAWER -->
+<div id="app-menu" class="app-menu hidden" onclick="toggleAppMenu()">
+  <div class="menu-content" onclick="event.stopPropagation()">
+    <a onclick="goToPage('index.html')">🏠 Home</a>
+    <a onclick="goToPage('market.html')">🛒 Marketplace</a>
+    <a onclick="goToPage('dashboard.html')">📊 Dashboard</a>
+    <a onclick="logout()">🚪 Logout</a>
+  </div>
+</div>
+
+
+<!-- CATEGORY FILTER -->
+<div class="category-scroll">
+  <button class="cat-pill active" onclick="filterJobs('all')">All</button>
+  <button class="cat-pill" onclick="filterJobs('cleaning')">Cleaning</button>
+  <button class="cat-pill" onclick="filterJobs('delivery')">Delivery</button>
+  <button class="cat-pill" onclick="filterJobs('repairs')">Repairs</button>
+  <button class="cat-pill" onclick="filterJobs('shopping')">Shopping</button>
+  <button class="cat-pill" onclick="filterJobs('transport')">Transport</button>
+</div>
+
+<!-- JOB LIST -->
+<section class="job-list" id="jobs-container">
+  <p class="muted">Loading available jobs...</p>
+</section>
+
+<!-- BOTTOM NAVIGATION -->
+<nav class="bottom-nav">
+  <button class="nav-item" onclick="goToPage('index.html')" id="nav-home">
+    <i class="fas fa-home"></i>
+  </button>
+
+  <button class="nav-item" onclick="goToPage('market.html')" id="nav-market">
+    <i class="fas fa-store"></i>
+  </button>
+
+  <button class="nav-item" onclick="openChatFromNav()" id="nav-chat">
+    <i class="fas fa-comments"></i>
+  </button>
+
+  <button class="nav-item" onclick="goToPage('dashboard.html')" id="nav-dashboard">
+    <i class="fas fa-th-large"></i>
+  </button>
+</nav>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+
+<script>
+  window.onload = function () {
+    if (typeof loadMarketplaceJobs === "function") {
+      loadMarketplaceJobs();
+
+      // Auto-filter if category is passed in URL
+      const params = new URLSearchParams(window.location.search);
+      const cat = params.get("cat");
+      if (cat) {
+        setTimeout(() => filterJobs(cat), 300);
+      }
+    }
+  };
+</script>
+
+</body>
+</html>

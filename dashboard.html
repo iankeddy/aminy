@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aminy Dashboard</title>
+
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+</head>
+
+<body class="mobile-dashboard">
+
+<!-- Loader -->
+<div id="loader-overlay" class="loader-overlay" style="display:none;">
+  <div class="spinner-container">
+    <div class="custom-spinner"></div>
+    <p>Processing...</p>
+  </div>
+</div>
+
+<!-- APP HEADER -->
+<header class="app-header">
+  <!-- LEFT: MENU -->
+  <button class="icon-btn" onclick="toggleAppMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- CENTER: LOGO -->
+  <div class="app-logo" onclick="goToPage('index.html')">
+    <img src="images/aminy-logo.png" alt="Aminy Logo">
+  </div>
+
+  <!-- RIGHT: PROFILE -->
+  <button class="icon-btn" onclick="handleProfileClick()">
+    <i class="fas fa-user-circle"></i>
+  </button>
+</header>
+
+<!-- APP DRAWER -->
+<div id="app-menu" class="app-menu hidden" onclick="toggleAppMenu()">
+  <div class="menu-content" onclick="event.stopPropagation()">
+    <a onclick="goToPage('index.html')">🏠 Home</a>
+    <a onclick="goToPage('market.html')">🛒 Marketplace</a>
+    <a onclick="goToPage('dashboard.html')">📊 Dashboard</a>
+    <a onclick="logout()">🚪 Logout</a>
+  </div>
+</div>
+
+
+<!-- WELCOME CARD -->
+<section class="welcome-card">
+  <h2 id="user-greeting">Welcome</h2>
+  <span id="user-role-badge" class="role-pill">ROLE</span>
+</section>
+
+<div id="helper-lock-banner" style="display:none;" class="approval-warning">
+  <i class="fas fa-lock"></i>
+  <p>
+    Your account is under review. You’ll be notified once approved.
+  </p>
+</div>
+
+<main class="dashboard-content">
+
+  <!-- CLIENT SECTION -->
+  <section id="client-section" style="display:none;">
+    
+    <!-- Post Job -->
+    <div class="card">
+      <h3><i class="fas fa-plus-circle"></i> Post a Job</h3>
+
+      <input type="text" id="job-title" placeholder="Job title" />
+      <textarea id="job-desc" placeholder="Job details"></textarea>
+      <input type="text" id="job-budget" placeholder="Budget (KES)" />
+      
+      <select id="job-category">
+  <option value="">Select Category</option>
+  <option value="cleaning">Cleaning</option>
+  <option value="delivery">Delivery</option>
+  <option value="repairs">Repairs</option>
+  <option value="shopping">Shopping</option>
+  <option value="transport">Transport</option>
+</select>
+
+      <button onclick="handlePostJob()" class="btn-primary full">
+        Post Job
+      </button>
+    </div>
+
+    <!-- My Helpers -->
+    <div class="card">
+      <h3><i class="fas fa-calendar-check"></i> My Hired Helpers</h3>
+      <div id="my-bookings-list">Loading...</div>
+    </div>
+
+  </section>
+
+  <!-- HELPER SECTION -->
+  <section id="helper-section" style="display:none;">
+
+    <!-- Requests -->
+    <div class="card highlight">
+      <h3><i class="fas fa-bell"></i> New Job Requests</h3>
+      <div id="requests-list">Checking...</div>
+    </div>
+
+    <!-- Verification -->
+    <div id="vetting-form" class="card">
+      <h3><i class="fas fa-user-shield"></i> Verification</h3>
+
+      <div class="upload-grid">
+        <input type="file" id="upload-selfie" />
+        <input type="file" id="upload-id" />
+        <input type="file" id="upload-conduct" />
+      </div>
+
+      <div class="location-box">
+        <input type="text" id="location-name" placeholder="Location" readonly />
+        <button onclick="detectMyLocation()" class="btn-secondary">Detect</button>
+        <input type="hidden" id="lat-coord">
+        <input type="hidden" id="lng-coord">
+      </div>
+
+      <button onclick="handleVettingUpload()" class="btn-primary full">
+        Submit for Verification
+      </button>
+    </div>
+
+    <!-- Active Jobs -->
+    <div class="card">
+      <h3><i class="fas fa-tasks"></i> My Active Jobs</h3>
+      <div id="active-jobs-list">Loading...</div>
+    </div>
+
+    <!-- Nearby Jobs -->
+    <div class="card">
+      <h3><i class="fas fa-briefcase"></i> Jobs Near You</h3>
+      <div id="jobs-container">Searching...</div>
+    </div>
+
+  </section>
+</main>
+
+<!-- CHAT FLOAT -->
+<!-- FULL SCREEN CHAT -->
+<div id="chat-page" class="chat-page hidden">
+
+  <!-- CHAT HEADER -->
+  <div class="chat-header">
+    <button onclick="exitChat()" class="chat-back">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+
+    <span id="chat-with-name">Inbox</span>
+
+    <div id="hire-actions" class="hire-actions" style="display:none;">
+      <button onclick="confirmHire()" class="btn-primary btn-sm">
+        Confirm Hire
+      </button>
+    </div>
+  </div>
+
+  <!-- INBOX -->
+  <div id="inbox-view" class="chat-body">
+    <div id="contact-list"></div>
+  </div>
+
+  <!-- CHAT THREAD -->
+  <div id="chat-thread-view" class="chat-thread hidden">
+    <div id="chat-messages" class="messages"></div>
+
+    <div class="chat-input">
+      <input id="msg-input" placeholder="Type a message..." />
+      <button onclick="sendMessage()">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<nav class="bottom-nav">
+  <button class="nav-item" onclick="goToPage('index.html')" id="nav-home">
+    <i class="fas fa-home"></i>
+  </button>
+
+  <button class="nav-item" onclick="goToPage('market.html')" id="nav-market">
+    <i class="fas fa-store"></i>
+  </button>
+
+  <button class="nav-item" onclick="openChatFromNav()" id="nav-chat">
+    <i class="fas fa-comments"></i>
+  </button>
+
+  <button class="nav-item" onclick="goToPage('dashboard.html')" id="nav-dashboard">
+    <i class="fas fa-th-large"></i>
+  </button>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+
+<!-- KEEP YOUR EXISTING AUTH + ROLE SCRIPT EXACTLY AS IS -->
+<script>
+  window.onload = async function () {
+    try {
+      if (!client) return;
+
+      const { data: { user } } = await client.auth.getUser();
+      if (!user) {
+        window.location.href = "auth.html";
+        return;
+      }
+
+      const { data: profile, error } = await client
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error || !profile) {
+        console.warn("Profile load failed");
+        return;
+      }
+
+      document.getElementById("user-greeting").innerText =
+        `Welcome, ${profile.full_name || "User"}`;
+      document.getElementById("user-role-badge").innerText =
+        profile.role.toUpperCase();
+
+      if (profile.role === "client") {
+        document.getElementById("client-section").style.display = "block";
+      }
+
+      if (profile.role === "helper") {
+        document.getElementById("helper-section").style.display = "block";
+
+        if (profile.is_vetted === true) {
+          // Approved helper — hide vetting form
+          document.getElementById("vetting-form").style.display = "none";
+        } else {
+          // Unvetted helper — lock down the dashboard
+          document.getElementById("helper-lock-banner").style.display = "block";
+
+          // Disable helper section buttons
+          document.querySelectorAll("#helper-section button").forEach(btn => {
+            if (!btn.closest("#vetting-form")) {
+              btn.disabled = true;
+            }
+          });
+
+          // Hide job-related sections
+          const requests = document.getElementById("requests-list");
+          const jobs = document.getElementById("jobs-container");
+          if (requests) requests.innerHTML = '<p class="muted">Verification pending. You cannot receive job requests yet.</p>';
+          if (jobs) jobs.innerHTML = '<p class="muted">Your account is under review.</p>';
+
+          // Hide chat nav for unvetted helpers
+          const chatBtn = document.getElementById("nav-chat");
+          if (chatBtn) chatBtn.style.display = "none";
+
+          // Check if documents were already submitted
+          if (profile.selfie_url && profile.id_url && profile.cert_good_conduct_url) {
+            const vettingForm = document.getElementById("vetting-form");
+            if (vettingForm) {
+              vettingForm.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fas fa-user-clock" style="font-size:2rem; color:#f39c12;"></i><h3>Verification Pending</h3><p>Your documents have been submitted and are under admin review.</p></div>';
+            }
+          }
+        }
+      }
+
+      // Optional safe loads
+      loadMarketplaceJobs?.();
+      loadChatList?.();
+
+      // Auto-open chat if redirected
+      if (localStorage.getItem("openChat") === "true") {
+        localStorage.removeItem("openChat");
+        setTimeout(openChatPage, 300);
+      }
+
+    } catch (err) {
+      console.warn("Dashboard init skipped:", err.message);
+    }
+  };
+</script>
+
+
+</body>
+</html>

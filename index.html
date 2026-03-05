@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aminy - Trusted Local Services</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    </head>
+
+<body class="app-home">
+
+  <header class="app-header">
+    <!-- LEFT: MENU -->
+    <button class="icon-btn" onclick="toggleAppMenu()">
+      <i class="fas fa-bars"></i>
+    </button>
+  
+    <!-- CENTER: LOGO -->
+    <div class="app-logo" onclick="goToPage('index.html')">
+      <img src="images/aminy-logo.png" alt="Aminy Logo">
+    </div>
+  
+    <!-- RIGHT: PROFILE -->
+    <button class="icon-btn" onclick="handleProfileClick()">
+      <i class="fas fa-user-circle"></i>
+    </button>
+  </header>
+  
+  <!-- APP DRAWER -->
+  <div id="app-menu" class="app-menu hidden" onclick="toggleAppMenu()">
+    <div class="menu-content" onclick="event.stopPropagation()">
+      <a onclick="goToPage('index.html')">🏠 Home</a>
+      <a onclick="goToPage('market.html')">🛒 Marketplace</a>
+      <a onclick="goToPage('dashboard.html')">📊 Dashboard</a>
+      <a onclick="logout()">🚪 Logout</a>
+    </div>
+  </div>
+  
+
+<!-- HOME SEARCH -->
+<div class="search-box">
+  <input
+    type="text"
+    id="homeSearch"
+    placeholder="Search available jobs..."
+    autocomplete="off"
+  />
+  <select id="location-filter">
+  <option value="">All Locations</option>
+  <option value="Nairobi">Nairobi</option>
+  <option value="Mombasa">Mombasa</option>
+  <option value="Kisumu">Kisumu</option>
+  <option value="Nakuru">Nakuru</option>
+</select>
+</div>
+
+<!-- SEARCH RESULTS -->
+<div id="search-results" class="search-results"></div>
+
+<!-- SERVICE CATEGORIES -->
+<section class="section">
+  <h3 class="section-title">Services</h3>
+
+  <div class="service-grid">
+    <a href="market.html?cat=cleaning" class="service-card">
+      <i class="fas fa-broom"></i>
+      <span>Cleaning</span>
+    </a>
+    <a href="market.html?cat=delivery" class="service-card">
+      <i class="fas fa-truck"></i>
+      <span>Delivery</span>
+    </a>
+    <a href="market.html?cat=repairs" class="service-card">
+      <i class="fas fa-tools"></i>
+      <span>Repairs</span>
+    </a>
+    <a href="market.html?cat=shopping" class="service-card">
+      <i class="fas fa-cart-shopping"></i>
+      <span>Shopping</span>
+    </a>
+    <a href="market.html?cat=transport" class="service-card">
+      <i class="fas fa-car"></i>
+      <span>Transport</span>
+    </a>
+    <a href="market.html?cat=petcare" class="service-card">
+      <i class="fas fa-paw"></i>
+      <span>Pet Care</span>
+    </a>
+  </div>
+</section>
+
+<!-- TRENDING JOBS -->
+<section class="section">
+  <div class="section-row">
+    <h3 class="section-title">Trending Jobs</h3>
+    <a href="market.html" class="link-green">View all</a>
+  </div>
+
+  <div id="trending-jobs-container" class="job-cards">
+    <p class="muted">Loading nearby jobs...</p>
+  </div>
+</section>
+
+<!-- BOTTOM NAVIGATION -->
+<nav class="bottom-nav">
+  <button class="nav-item" onclick="goToPage('index.html')" id="nav-home">
+    <i class="fas fa-home"></i>
+  </button>
+
+  <button class="nav-item" onclick="goToPage('market.html')" id="nav-market">
+    <i class="fas fa-store"></i>
+  </button>
+
+  <button class="nav-item" onclick="openChatFromNav()" id="nav-chat">
+    <i class="fas fa-comments"></i>
+  </button>
+
+  <button class="nav-item" onclick="goToPage('dashboard.html')" id="nav-dashboard">
+    <i class="fas fa-th-large"></i>
+  </button>
+</nav>
+
+<!-- AUTH SHEET (UNCHANGED) -->
+<!-- KEEP YOUR EXISTING AUTH OVERLAY & AUTH SHEET HTML HERE -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+
+<script>
+  window.onload = function () {
+    // Only load trending jobs if Supabase is reachable
+    loadTrendingJobs?.();
+  };
+</script>
+
+</body>
+
+</html>

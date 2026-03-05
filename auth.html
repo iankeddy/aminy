@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aminy - Login / Sign Up</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* === FULL SCREEN MOBILE STYLE === */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .auth-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .auth-header img {
+      width: 100px;
+      margin-bottom: 10px;
+    }
+
+    .auth-header h1 {
+      color: #1f9d55;
+      font-size: 1.6rem;
+      margin: 0;
+    }
+
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 20px;
+    }
+
+    .auth-tabs button {
+      flex: 1;
+      padding: 12px 0;
+      border: none;
+      background: none;
+      font-weight: bold;
+      color: #555;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .auth-tabs button.active {
+      color: #1f9d55;
+      border-bottom: 3px solid #1f9d55;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .auth-form input, .auth-form select {
+      padding: 12px 15px;
+      border-radius: 25px;
+      border: 1px solid #ccc;
+      outline: none;
+      font-size: 0.95rem;
+    }
+
+    .auth-form input:focus, .auth-form select:focus {
+      border-color: #1f9d55;
+    }
+
+    .btn-primary {
+      background: #1f9d55;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 25px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .btn-primary:hover {
+      background: #17a44a;
+    }
+
+    .auth-footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #777;
+      margin-top: 10px;
+    }
+
+    /* BOTTOM NAVIGATION */
+    .bottom-nav {
+      height: 60px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top: 1px solid #ddd;
+      background: white;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+
+    .bottom-nav .nav-item {
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      color: #555;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .bottom-nav .nav-item.active {
+      color: #1f9d55;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loader Overlay -->
+<div id="loader-overlay" class="loader-overlay" style="display:none;">
+  <div style="text-align:center; color:#fff;">
+    <div style="border:4px solid rgba(255,255,255,0.3); border-top:4px solid #fff; border-radius:50%; width:40px; height:40px; animation:spin 0.8s linear infinite; margin:0 auto 10px;"></div>
+    <p>Processing...</p>
+  </div>
+</div>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+<!-- Custom Modal -->
+<div id="custom-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+  <div style="background:#fff; border-radius:12px; padding:25px; max-width:320px; text-align:center; margin:20px;">
+    <h3 id="modal-title" style="margin:0 0 10px;"></h3>
+    <p id="modal-message" style="color:#555; margin:0 0 20px;"></p>
+    <button onclick="document.getElementById('custom-modal').style.display='none'" style="background:#1f9d55; color:#fff; border:none; padding:10px 30px; border-radius:25px; cursor:pointer; font-weight:bold;">OK</button>
+  </div>
+</div>
+
+<div class="auth-container">
+
+  <!-- HEADER -->
+  <div class="auth-header">
+    <img src="images/aminy-logo.png" alt="Aminy Logo">
+    <h1>Welcome to Aminy</h1>
+    <p style="color:#555;">Hire helpers or start earning today!</p>
+  </div>
+
+  <!-- TABS -->
+  <div class="auth-tabs">
+    <button id="login-tab" class="active" onclick="switchAuthTab('login')">Login</button>
+    <button id="signup-tab" onclick="switchAuthTab('signup')">Sign Up</button>
+  </div>
+
+  <!-- LOGIN FORM -->
+  <div id="login-form" class="auth-form">
+    <input type="email" id="login-email" placeholder="Email Address">
+    <input type="password" id="login-password" placeholder="Password">
+    <button class="btn-primary full-width" onclick="handleLogin()">Log In</button>
+    <p style="text-align:center; font-size:0.85rem; color:#777; cursor:pointer;" onclick="forgotPassword()">Forgot Password?</p>
+  </div>
+
+  <!-- SIGNUP FORM -->
+  <div id="signup-form" class="auth-form" style="display:none;">
+    <input type="text" id="signup-name" placeholder="Full Name">
+    <input type="email" id="signup-email" placeholder="Email Address">
+    <input type="password" id="signup-password" placeholder="Create Password">
+
+    <select id="signup-role">
+      <option value="client">Client (I need help)</option>
+      <option value="helper">Helper (I want to work)</option>
+    </select>
+
+    <button class="btn-primary full-width" onclick="handleSignup()">Sign Up</button>
+  </div>
+
+  <div class="auth-footer">
+    By signing up, you agree to Aminy’s Terms & Privacy Policy
+  </div>
+
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<nav class="bottom-nav">
+  <button class="nav-item" onclick="goToPage('index.html')" id="nav-home">
+    <i class="fas fa-home"></i>
+  </button>
+
+  <button class="nav-item" onclick="goToPage('market.html')" id="nav-market">
+    <i class="fas fa-store"></i>
+  </button>
+
+  <button class="nav-item" onclick="openChatFromNav()" id="nav-chat">
+    <i class="fas fa-comments"></i>
+  </button>
+
+  <button class="nav-item" onclick="goToPage('dashboard.html')" id="nav-dashboard">
+    <i class="fas fa-th-large"></i>
+  </button>
+</nav>
+
+<script src="app.js"></script>
+<script>
+  function switchAuthTab(tab) {
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const loginTab = document.getElementById('login-tab');
+    const signupTab = document.getElementById('signup-tab');
+
+    if(tab === 'login') {
+      loginForm.style.display = 'flex';
+      signupForm.style.display = 'none';
+      loginTab.classList.add('active');
+      signupTab.classList.remove('active');
+    } else {
+      loginForm.style.display = 'none';
+      signupForm.style.display = 'flex';
+      loginTab.classList.remove('active');
+      signupTab.classList.add('active');
+    }
+  }
+
+  function forgotPassword() {
+    alert("Password reset feature coming soon!");
+  }
+
+  function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-password').value;
+    if (!email || !pass) {
+      showModal("Missing Fields", "Please enter both email and password.", "error");
+      return;
+    }
+    login(email, pass); // from app.js
+  }
+
+  function handleSignup() {
+    const email = document.getElementById('signup-email').value.trim();
+    const pass = document.getElementById('signup-password').value;
+    const role = document.getElementById('signup-role').value;
+    const name = document.getElementById('signup-name').value.trim();
+    if (!name || !email || !pass) {
+      showModal("Missing Fields", "Please fill in all fields.", "error");
+      return;
+    }
+    if (pass.length < 6) {
+      showModal("Weak Password", "Password must be at least 6 characters.", "error");
+      return;
+    }
+    signUp(email, pass, role, name); // from app.js
+  }
+</script>
+
+</body>
+</html>
