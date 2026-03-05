@@ -148,7 +148,7 @@
 
   <!-- CHAT HEADER -->
   <div class="chat-header">
-    <button onclick="exitChat()" class="chat-back">
+    <button onclick="showInbox()" class="chat-back" id="chat-back-btn">
       <i class="fas fa-arrow-left"></i>
     </button>
 
@@ -156,9 +156,13 @@
 
     <div id="hire-actions" class="hire-actions" style="display:none;">
       <button onclick="confirmHire()" class="btn-primary btn-sm">
-        Confirm Hire
+        ✅ Confirm Hire
       </button>
     </div>
+
+    <button onclick="exitChat()" class="chat-back" style="margin-left:auto">
+      <i class="fas fa-times"></i>
+    </button>
   </div>
 
   <!-- INBOX -->
@@ -171,7 +175,7 @@
     <div id="chat-messages" class="messages"></div>
 
     <div class="chat-input">
-      <input id="msg-input" placeholder="Type a message..." />
+      <input id="msg-input" placeholder="Type a message…" autocomplete="off" />
       <button onclick="sendMessage()">
         <i class="fas fa-paper-plane"></i>
       </button>
@@ -199,6 +203,10 @@
   </button>
 </nav>
 
+<style>
+.hire-actions { display: flex; align-items: center; }
+.hire-actions .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 20px; }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 
