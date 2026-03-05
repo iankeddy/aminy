@@ -543,25 +543,31 @@ body {
   <div class="menu-content" onclick="event.stopPropagation()">
     <div class="menu-brand">
       <div class="menu-brand-icon">A</div>
-      <div class="menu-brand-name">Aminy</div>
+      <div>
+        <div class="menu-brand-name">Aminy</div>
+        <div class="menu-brand-sub">Local Services</div>
+      </div>
     </div>
-    <button class="menu-item" onclick="goToPage('index.html')"><i class="fas fa-home"></i> Home</button>
-    <button class="menu-item" onclick="goToPage('market.html')"><i class="fas fa-store"></i> Marketplace</button>
-    <button class="menu-item" onclick="goToPage('dashboard.html')"><i class="fas fa-th-large"></i> Dashboard</button>
-    <div style="margin-top:auto;padding-top:20px;border-top:1px solid var(--border)">
-      <button class="menu-item" onclick="doLogout()" style="color:#ef4444"><i class="fas fa-sign-out-alt" style="color:#ef4444"></i> Logout</button>
+    <div class="menu-nav">
+      <button class="menu-item" onclick="goToPage('index.html')"><i class="fas fa-home"></i> Home</button>
+      <button class="menu-item active"><i class="fas fa-store"></i> Marketplace</button>
+      <button class="menu-item" onclick="goToPage('dashboard.html')"><i class="fas fa-th-large"></i> Dashboard</button>
+    </div>
+    <div class="menu-footer">
+      <button class="menu-item danger" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
     </div>
   </div>
 </div>
 
 <!-- HEADER -->
 <header class="app-header">
-  <button class="icon-btn" onclick="openMenu()"><i class="fas fa-bars"></i></button>
-  <div class="app-logo" onclick="goToPage('index.html')">
-    <img src="images/aminy-logo.png" alt="Aminy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-    <div style="display:none;font-family:'Outfit',sans-serif;font-weight:900;font-size:20px;color:var(--green)">Aminy</div>
+  <button class="icon-btn" onclick="openMenu()" aria-label="Menu"><i class="fas fa-bars"></i></button>
+  <div class="app-logo" onclick="goToPage('index.html')" role="img" aria-label="Aminy Home">
+    <img src="images/aminy-logo.png" alt="Aminy"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <span class="app-logo-text" style="display:none">Aminy</span>
   </div>
-  <button class="icon-btn" onclick="handleProfileClick()"><i class="fas fa-user-circle"></i></button>
+  <button class="icon-btn" onclick="handleProfileClick()" aria-label="Profile"><i class="fas fa-user-circle"></i></button>
 </header>
 
 <!-- MODE TOGGLE -->
@@ -624,10 +630,10 @@ body {
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
-  <button class="nav-item" onclick="goToPage('index.html')"><i class="fas fa-home"></i>Home</button>
-  <button class="nav-item active" onclick="goToPage('market.html')"><i class="fas fa-store"></i>Market</button>
-  <button class="nav-item" onclick="openChatFromNav()"><i class="fas fa-comments"></i>Chat</button>
-  <button class="nav-item" onclick="goToPage('dashboard.html')"><i class="fas fa-th-large"></i>Dashboard</button>
+  <button class="nav-item" onclick="goToPage('index.html')"><i class="fas fa-home"></i><span>Home</span></button>
+  <button class="nav-item active" onclick="goToPage('market.html')"><i class="fas fa-store"></i><span>Market</span></button>
+  <button class="nav-item" onclick="openChatFromNav()"><i class="fas fa-comments"></i><span>Chat</span></button>
+  <button class="nav-item" onclick="goToPage('dashboard.html')"><i class="fas fa-th-large"></i><span>Dashboard</span></button>
 </nav>
 
 <!-- HELPER PROFILE MODAL -->

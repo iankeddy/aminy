@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aminy Dashboard</title>
 
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body class="mobile-dashboard">
@@ -19,33 +19,41 @@
   </div>
 </div>
 
+<!-- DRAWER -->
+<div id="app-menu" class="app-menu hidden" onclick="toggleAppMenu()">
+  <div class="menu-content" onclick="event.stopPropagation()">
+    <div class="menu-brand">
+      <div class="menu-brand-icon">A</div>
+      <div>
+        <div class="menu-brand-name">Aminy</div>
+        <div class="menu-brand-sub">Local Services</div>
+      </div>
+    </div>
+    <div class="menu-nav">
+      <button class="menu-item" onclick="goToPage('index.html')"><i class="fas fa-home"></i> Home</button>
+      <button class="menu-item" onclick="goToPage('market.html')"><i class="fas fa-store"></i> Marketplace</button>
+      <button class="menu-item active"><i class="fas fa-th-large"></i> Dashboard</button>
+    </div>
+    <div class="menu-footer">
+      <button class="menu-item danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </div>
+</div>
+
 <!-- APP HEADER -->
 <header class="app-header">
-  <!-- LEFT: MENU -->
-  <button class="icon-btn" onclick="toggleAppMenu()">
+  <button class="icon-btn" onclick="toggleAppMenu()" aria-label="Menu">
     <i class="fas fa-bars"></i>
   </button>
-
-  <!-- CENTER: LOGO -->
-  <div class="app-logo" onclick="goToPage('index.html')">
-    <img src="images/aminy-logo.png" alt="Aminy Logo">
+  <div class="app-logo" onclick="goToPage('index.html')" role="img" aria-label="Aminy Home">
+    <img src="images/aminy-logo.png" alt="Aminy"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <span class="app-logo-text" style="display:none">Aminy</span>
   </div>
-
-  <!-- RIGHT: PROFILE -->
-  <button class="icon-btn" onclick="handleProfileClick()">
+  <button class="icon-btn" onclick="handleProfileClick()" aria-label="Profile">
     <i class="fas fa-user-circle"></i>
   </button>
 </header>
-
-<!-- APP DRAWER -->
-<div id="app-menu" class="app-menu hidden" onclick="toggleAppMenu()">
-  <div class="menu-content" onclick="event.stopPropagation()">
-    <a onclick="goToPage('index.html')">🏠 Home</a>
-    <a onclick="goToPage('market.html')">🛒 Marketplace</a>
-    <a onclick="goToPage('dashboard.html')">📊 Dashboard</a>
-    <a onclick="logout()">🚪 Logout</a>
-  </div>
-</div>
 
 
 <!-- WELCOME CARD -->
@@ -187,19 +195,16 @@
 <!-- BOTTOM NAVIGATION -->
 <nav class="bottom-nav">
   <button class="nav-item" onclick="goToPage('index.html')" id="nav-home">
-    <i class="fas fa-home"></i>
+    <i class="fas fa-home"></i><span>Home</span>
   </button>
-
   <button class="nav-item" onclick="goToPage('market.html')" id="nav-market">
-    <i class="fas fa-store"></i>
+    <i class="fas fa-store"></i><span>Market</span>
   </button>
-
   <button class="nav-item" onclick="openChatFromNav()" id="nav-chat">
-    <i class="fas fa-comments"></i>
+    <i class="fas fa-comments"></i><span>Chat</span>
   </button>
-
-  <button class="nav-item" onclick="goToPage('dashboard.html')" id="nav-dashboard">
-    <i class="fas fa-th-large"></i>
+  <button class="nav-item active" onclick="goToPage('dashboard.html')" id="nav-dashboard">
+    <i class="fas fa-th-large"></i><span>Dashboard</span>
   </button>
 </nav>
 
