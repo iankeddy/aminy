@@ -113,26 +113,9 @@
       <div id="requests-list">Checking...</div>
     </div>
 
-    <!-- Verification -->
-    <div id="vetting-form" class="card">
-      <h3><i class="fas fa-user-shield"></i> Verification</h3>
-
-      <div class="upload-grid">
-        <input type="file" id="upload-selfie" />
-        <input type="file" id="upload-id" />
-        <input type="file" id="upload-conduct" />
-      </div>
-
-      <div class="location-box">
-        <input type="text" id="location-name" placeholder="Location" readonly />
-        <button onclick="detectMyLocation()" class="btn-secondary">Detect</button>
-        <input type="hidden" id="lat-coord">
-        <input type="hidden" id="lng-coord">
-      </div>
-
-      <button onclick="handleVettingUpload()" class="btn-primary full">
-        Submit for Verification
-      </button>
+    <!-- VERIFICATION ONBOARDING WIZARD -->
+    <div id="vetting-form" class="card" style="padding:0;overflow:hidden">
+      <!-- Wizard injected by initOnboardingWizard() in app.js -->
     </div>
 
     <!-- Active Jobs -->
@@ -276,10 +259,22 @@
 
           // Check if documents were already submitted
           if (profile.selfie_url && profile.id_url && profile.cert_good_conduct_url) {
+            // Documents already submitted — show pending state
             const vettingForm = document.getElementById("vetting-form");
             if (vettingForm) {
-              vettingForm.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fas fa-user-clock" style="font-size:2rem; color:#f39c12;"></i><h3>Verification Pending</h3><p>Your documents have been submitted and are under admin review.</p></div>';
+              vettingForm.style.padding = '0';
+              vettingForm.innerHTML = \`
+                <div style="text-align:center;padding:32px 20px">
+                  <div style="width:60px;height:60px;border-radius:50%;background:#fff8ec;color:#f07623;font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+                    <i class="fas fa-clock"></i>
+                  </div>
+                  <div style="font-family:var(--font-display);font-weight:800;font-size:18px;margin-bottom:6px">Under Review</div>
+                  <div style="font-size:13px;color:var(--text-muted);line-height:1.6">Your documents have been submitted and are being reviewed by our team. You'll be notified within 24 hours.</div>
+                </div>\`;
             }
+          } else {
+            // Documents not yet submitted — launch wizard
+            initOnboardingWizard?.(profile);
           }
         }
       }

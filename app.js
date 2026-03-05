@@ -930,3 +930,899 @@ window.confirmHire = confirmHire;
 window.showChatThread = showChatThread;
 window.showInbox = showInbox;
 window.startChatWith = startChatWith;
+
+
+// ============================================================
+// HELPER ONBOARDING WIZARD
+// 5-step guided verification flow
+// Steps: Welcome → Profile → Location → Documents → Review & Submit
+// ============================================================
+
+const WIZARD_STEPS = [
+  { id: 'welcome',   title: 'Welcome',    icon: 'fa-hand-wave' },
+  { id: 'profile',   title: 'Profile',    icon: 'fa-user-pen' },
+  { id: 'location',  title: 'Location',   icon: 'fa-map-pin' },
+  { id: 'documents', title: 'Documents',  icon: 'fa-file-shield' },
+  { id: 'review',    title: 'Submit',     icon: 'fa-circle-check' },
+];
+
+// Wizard state — persisted in localStorage so a refresh doesn't reset progress
+const WIZ_KEY = 'aminy_wizard_state';
+let wizState = {
+  step: 0,
+  fullName: '',
+  bio: '',
+  serviceCategory: '',
+  hourlyRate: '',
+  locationName: '',
+  selfieFile: null,
+  idFile: null,
+  conductFile: null,
+  selfiePreview: null,
+  idPreview: null,
+  conductPreview: null,
+};
+
+function wizSave() {
+  try {
+    const s = { ...wizState };
+    delete s.selfieFile; delete s.idFile; delete s.conductFile; // can't serialize File objects
+    localStorage.setItem(WIZ_KEY, JSON.stringify(s));
+  } catch(e) {}
+}
+
+function wizLoad() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(WIZ_KEY) || '{}');
+    wizState = { ...wizState, ...saved };
+  } catch(e) {}
+}
+
+// ── MOUNT ──
+function initOnboardingWizard(profile) {
+  wizLoad();
+  // Pre-fill from existing profile if available
+  if (profile) {
+    if (profile.full_name && !wizState.fullName)  wizState.fullName = profile.full_name;
+    if (profile.bio && !wizState.bio)             wizState.bio = profile.bio;
+    if (profile.location_name && !wizState.locationName) wizState.locationName = profile.location_name;
+  }
+
+  const container = document.getElementById('vetting-form');
+  if (!container) return;
+  injectWizardStyles();
+  renderWizard();
+}
+
+// ── RENDER SHELL ──
+function renderWizard() {
+  const container = document.getElementById('vetting-form');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="wiz-wrap" id="wiz-wrap">
+      <div class="wiz-progress-bar">
+        <div class="wiz-progress-fill" id="wiz-fill"></div>
+      </div>
+      <div class="wiz-steps-row" id="wiz-steps-row"></div>
+      <div class="wiz-body" id="wiz-body"></div>
+      <div class="wiz-footer" id="wiz-footer"></div>
+    </div>`;
+
+  renderWizStep();
+}
+
+function renderWizStep() {
+  const s = wizState.step;
+  const total = WIZARD_STEPS.length;
+
+  // Progress bar
+  const pct = (s / (total - 1)) * 100;
+  const fill = document.getElementById('wiz-fill');
+  if (fill) fill.style.width = pct + '%';
+
+  // Step dots
+  const stepsRow = document.getElementById('wiz-steps-row');
+  if (stepsRow) {
+    stepsRow.innerHTML = WIZARD_STEPS.map((step, i) => `
+      <div class="wiz-step-dot ${i < s ? 'done' : i === s ? 'active' : ''}">
+        <div class="wiz-dot-circle">
+          ${i < s ? '<i class="fas fa-check"></i>' : `<i class="fas ${step.icon}"></i>`}
+        </div>
+        <span>${step.label || step.title}</span>
+      </div>`).join('');
+  }
+
+  // Body
+  const body = document.getElementById('wiz-body');
+  if (body) body.innerHTML = getStepHTML(s);
+
+  // Footer
+  renderWizFooter(s);
+
+  // Bind step-specific events
+  bindStepEvents(s);
+}
+
+// ── STEP CONTENT ──
+function getStepHTML(step) {
+  switch(step) {
+    case 0: return stepWelcome();
+    case 1: return stepProfile();
+    case 2: return stepLocation();
+    case 3: return stepDocuments();
+    case 4: return stepReview();
+    default: return '';
+  }
+}
+
+function stepWelcome() {
+  return `
+    <div class="wiz-welcome">
+      <div class="wiz-welcome-icon">
+        <i class="fas fa-shield-halved"></i>
+      </div>
+      <h2 class="wiz-title">Become a Verified Helper</h2>
+      <p class="wiz-subtitle">Verification builds trust with clients and unlocks all Aminy features — job applications, chat, and payouts.</p>
+      <div class="wiz-checklist">
+        <div class="wiz-check-item"><i class="fas fa-circle-check"></i> Takes about 5 minutes</div>
+        <div class="wiz-check-item"><i class="fas fa-circle-check"></i> Your data is stored securely</div>
+        <div class="wiz-check-item"><i class="fas fa-circle-check"></i> Admin reviews within 24 hours</div>
+        <div class="wiz-check-item"><i class="fas fa-circle-check"></i> You get notified on approval</div>
+      </div>
+      <div class="wiz-what-need">
+        <div class="wiz-need-title"><i class="fas fa-clipboard-list"></i> What you'll need</div>
+        <div class="wiz-need-grid">
+          <div class="wiz-need-item"><i class="fas fa-camera"></i><span>Selfie photo</span></div>
+          <div class="wiz-need-item"><i class="fas fa-id-card"></i><span>National ID</span></div>
+          <div class="wiz-need-item"><i class="fas fa-file-certificate"></i><span>Police Clearance</span></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function stepProfile() {
+  const categories = ['Cleaning','Delivery','Repairs','Shopping','Transport','Pet Care','Gardening','Moving','Security','Tutoring','Laundry','Events'];
+  return `
+    <div class="wiz-step-content">
+      <div class="wiz-step-header">
+        <div class="wiz-step-icon"><i class="fas fa-user-pen"></i></div>
+        <h2 class="wiz-title">Your Profile</h2>
+        <p class="wiz-subtitle">Tell clients who you are and what you do best.</p>
+      </div>
+      <div class="wiz-field">
+        <label class="wiz-label">Full Name <span class="wiz-required">*</span></label>
+        <div class="wiz-input-wrap">
+          <i class="fas fa-user"></i>
+          <input type="text" id="wiz-fullname" class="wiz-input" placeholder="e.g. Grace Wanjiku" value="${escWiz(wizState.fullName)}">
+        </div>
+      </div>
+      <div class="wiz-field">
+        <label class="wiz-label">Service Category <span class="wiz-required">*</span></label>
+        <div class="wiz-cat-grid" id="wiz-cat-grid">
+          ${categories.map(c => `
+            <div class="wiz-cat-opt ${wizState.serviceCategory === c ? 'selected' : ''}" onclick="selectWizCat('${c}')">
+              ${c}
+            </div>`).join('')}
+        </div>
+        <input type="hidden" id="wiz-category" value="${escWiz(wizState.serviceCategory)}">
+      </div>
+      <div class="wiz-field">
+        <label class="wiz-label">Hourly Rate (KES)</label>
+        <div class="wiz-input-wrap">
+          <i class="fas fa-money-bill-wave"></i>
+          <input type="number" id="wiz-rate" class="wiz-input" placeholder="e.g. 500" value="${escWiz(wizState.hourlyRate)}" min="0">
+        </div>
+        <div class="wiz-hint">Leave blank to negotiate per job</div>
+      </div>
+      <div class="wiz-field">
+        <label class="wiz-label">Short Bio</label>
+        <textarea id="wiz-bio" class="wiz-input wiz-textarea" placeholder="Describe your experience, skills, and availability…">${escWiz(wizState.bio)}</textarea>
+        <div class="wiz-char-count" id="wiz-bio-count">${(wizState.bio||'').length}/200</div>
+      </div>
+    </div>`;
+}
+
+function stepLocation() {
+  return `
+    <div class="wiz-step-content">
+      <div class="wiz-step-header">
+        <div class="wiz-step-icon"><i class="fas fa-map-pin"></i></div>
+        <h2 class="wiz-title">Your Location</h2>
+        <p class="wiz-subtitle">Clients search by area. Your exact coordinates are never shared publicly.</p>
+      </div>
+      <div class="wiz-field">
+        <label class="wiz-label">Area / Neighbourhood <span class="wiz-required">*</span></label>
+        <div class="wiz-input-wrap">
+          <i class="fas fa-location-dot"></i>
+          <input type="text" id="location-name" class="wiz-input" placeholder="e.g. Westlands, Nairobi" value="${escWiz(wizState.locationName)}">
+        </div>
+      </div>
+      <button class="wiz-detect-btn" onclick="wizDetectLocation()" id="wiz-detect-btn">
+        <i class="fas fa-crosshairs"></i> Detect My Location
+      </button>
+      <input type="hidden" id="lat-coord">
+      <input type="hidden" id="lng-coord">
+      <div id="wiz-loc-feedback" class="wiz-loc-feedback" style="display:none"></div>
+      <div class="wiz-location-tip">
+        <i class="fas fa-circle-info"></i>
+        <span>We use your location to match you with nearby jobs. Tap "Detect" for the most accurate result, or type your area manually.</span>
+      </div>
+    </div>`;
+}
+
+function stepDocuments() {
+  return `
+    <div class="wiz-step-content">
+      <div class="wiz-step-header">
+        <div class="wiz-step-icon"><i class="fas fa-file-shield"></i></div>
+        <h2 class="wiz-title">Verification Documents</h2>
+        <p class="wiz-subtitle">All documents are encrypted and only viewed by Aminy admins for verification.</p>
+      </div>
+
+      ${docUploadField({
+        id: 'upload-selfie',
+        label: 'Selfie Photo',
+        required: true,
+        icon: 'fa-camera',
+        hint: 'A clear photo of your face. No sunglasses or hats.',
+        preview: wizState.selfiePreview,
+        fileName: wizState.selfieFileName,
+      })}
+      ${docUploadField({
+        id: 'upload-id',
+        label: 'National ID / Passport',
+        required: true,
+        icon: 'fa-id-card',
+        hint: 'Front of your Kenya National ID or passport photo page.',
+        preview: wizState.idPreview,
+        fileName: wizState.idFileName,
+      })}
+      ${docUploadField({
+        id: 'upload-conduct',
+        label: 'Police Clearance Certificate',
+        required: true,
+        icon: 'fa-file-certificate',
+        hint: 'Certificate of Good Conduct from the Kenya Police Service.',
+        preview: wizState.conductPreview,
+        fileName: wizState.conductFileName,
+      })}
+    </div>`;
+}
+
+function docUploadField({ id, label, required, icon, hint, preview, fileName }) {
+  const hasFile = !!preview;
+  return `
+    <div class="wiz-doc-field" id="field-${id}">
+      <div class="wiz-doc-label">
+        <i class="fas ${icon}"></i> ${label} ${required ? '<span class="wiz-required">*</span>' : ''}
+      </div>
+      <div class="wiz-doc-hint">${hint}</div>
+      <div class="wiz-upload-zone ${hasFile ? 'has-file' : ''}" id="zone-${id}" onclick="document.getElementById('${id}').click()">
+        ${hasFile
+          ? `<img src="${preview}" class="wiz-preview-img" alt="Preview">
+             <div class="wiz-file-overlay">
+               <i class="fas fa-check-circle"></i>
+               <span>${fileName || 'File selected'}</span>
+               <span class="wiz-change-link">Tap to change</span>
+             </div>`
+          : `<div class="wiz-upload-placeholder">
+               <i class="fas fa-cloud-arrow-up"></i>
+               <span>Tap to upload</span>
+               <small>JPG, PNG or PDF · Max 5MB</small>
+             </div>`
+        }
+      </div>
+      <input type="file" id="${id}" accept="image/*,.pdf" style="display:none" onchange="wizHandleFile('${id}', this)">
+    </div>`;
+}
+
+function stepReview() {
+  const allDocs = wizState.selfiePreview && wizState.idPreview && wizState.conductPreview;
+  return `
+    <div class="wiz-step-content">
+      <div class="wiz-step-header">
+        <div class="wiz-step-icon" style="background:var(--green-light);color:var(--green)"><i class="fas fa-circle-check"></i></div>
+        <h2 class="wiz-title">Review & Submit</h2>
+        <p class="wiz-subtitle">Check your details before submitting for admin review.</p>
+      </div>
+
+      <div class="wiz-review-card">
+        <div class="wiz-review-row">
+          <div class="wiz-review-label"><i class="fas fa-user"></i> Name</div>
+          <div class="wiz-review-val">${escWiz(wizState.fullName) || '<span class="wiz-missing">Not set</span>'}</div>
+          <button class="wiz-edit-btn" onclick="wizGoTo(1)"><i class="fas fa-pen"></i></button>
+        </div>
+        <div class="wiz-review-row">
+          <div class="wiz-review-label"><i class="fas fa-briefcase"></i> Category</div>
+          <div class="wiz-review-val">${escWiz(wizState.serviceCategory) || '<span class="wiz-missing">Not set</span>'}</div>
+          <button class="wiz-edit-btn" onclick="wizGoTo(1)"><i class="fas fa-pen"></i></button>
+        </div>
+        <div class="wiz-review-row">
+          <div class="wiz-review-label"><i class="fas fa-money-bill"></i> Rate</div>
+          <div class="wiz-review-val">${wizState.hourlyRate ? 'KES ' + escWiz(wizState.hourlyRate) + '/hr' : 'Negotiable'}</div>
+          <button class="wiz-edit-btn" onclick="wizGoTo(1)"><i class="fas fa-pen"></i></button>
+        </div>
+        <div class="wiz-review-row">
+          <div class="wiz-review-label"><i class="fas fa-location-dot"></i> Location</div>
+          <div class="wiz-review-val">${escWiz(wizState.locationName) || '<span class="wiz-missing">Not set</span>'}</div>
+          <button class="wiz-edit-btn" onclick="wizGoTo(2)"><i class="fas fa-pen"></i></button>
+        </div>
+      </div>
+
+      <div class="wiz-docs-review">
+        <div class="wiz-review-label" style="margin-bottom:10px"><i class="fas fa-file-shield"></i> Documents</div>
+        <div class="wiz-docs-grid">
+          ${wizDocThumb(wizState.selfiePreview, 'Selfie', 1)}
+          ${wizDocThumb(wizState.idPreview, 'National ID', 2)}
+          ${wizDocThumb(wizState.conductPreview, 'Police Cert', 3)}
+        </div>
+      </div>
+
+      ${!allDocs ? `<div class="wiz-warning"><i class="fas fa-triangle-exclamation"></i> Some documents are missing. <button onclick="wizGoTo(3)" class="wiz-text-link">Upload now</button></div>` : ''}
+
+      <div class="wiz-declaration">
+        <label class="wiz-checkbox-wrap">
+          <input type="checkbox" id="wiz-declaration" onchange="wizToggleSubmit()">
+          <span class="wiz-checkbox-box"></span>
+          <span class="wiz-checkbox-label">I confirm all documents are genuine and belong to me. I agree to Aminy's <a href="#" style="color:var(--green-dark)">Terms of Service</a>.</span>
+        </label>
+      </div>
+    </div>`;
+}
+
+function wizDocThumb(src, label, step) {
+  return `
+    <div class="wiz-doc-thumb ${src ? 'ready' : 'missing'}" onclick="wizGoTo(3)">
+      ${src ? `<img src="${src}" alt="${label}">` : `<i class="fas fa-circle-plus"></i>`}
+      <span>${label}</span>
+      ${src ? '<div class="wiz-thumb-tick"><i class="fas fa-check"></i></div>' : ''}
+    </div>`;
+}
+
+// ── FOOTER / NAVIGATION ──
+function renderWizFooter(step) {
+  const footer = document.getElementById('wiz-footer');
+  if (!footer) return;
+  const isFirst = step === 0;
+  const isLast  = step === WIZARD_STEPS.length - 1;
+  footer.innerHTML = `
+    <div class="wiz-footer-inner">
+      <button class="wiz-btn-back ${isFirst ? 'invisible' : ''}" onclick="wizBack()" ${isFirst ? 'disabled' : ''}>
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <div class="wiz-step-counter">${step + 1} of ${WIZARD_STEPS.length}</div>
+      ${isLast
+        ? `<button class="wiz-btn-next wiz-btn-submit" id="wiz-submit-btn" onclick="wizSubmit()" disabled>
+             <i class="fas fa-paper-plane"></i> Submit
+           </button>`
+        : `<button class="wiz-btn-next" onclick="wizNext()">
+             ${isFirst ? 'Get Started' : 'Continue'} <i class="fas fa-arrow-right"></i>
+           </button>`
+      }
+    </div>`;
+}
+
+// ── NAVIGATION ──
+function wizNext() {
+  if (!wizValidateStep(wizState.step)) return;
+  wizCollectStep(wizState.step);
+  wizState.step = Math.min(wizState.step + 1, WIZARD_STEPS.length - 1);
+  wizSave();
+  renderWizStep();
+  document.getElementById('vetting-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function wizBack() {
+  wizCollectStep(wizState.step);
+  wizState.step = Math.max(wizState.step - 1, 0);
+  wizSave();
+  renderWizStep();
+  document.getElementById('vetting-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function wizGoTo(step) {
+  wizCollectStep(wizState.step);
+  wizState.step = step;
+  wizSave();
+  renderWizStep();
+  document.getElementById('vetting-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── VALIDATION ──
+function wizValidateStep(step) {
+  if (step === 1) {
+    const name = document.getElementById('wiz-fullname')?.value.trim();
+    const cat  = document.getElementById('wiz-category')?.value;
+    if (!name) { wizShakeField('wiz-fullname', 'Please enter your full name'); return false; }
+    if (!cat)  { wizShowError('wiz-cat-grid', 'Please select a service category'); return false; }
+  }
+  if (step === 2) {
+    const loc = document.getElementById('location-name')?.value.trim();
+    if (!loc) { wizShakeField('location-name', 'Please enter your location'); return false; }
+  }
+  if (step === 3) {
+    const missing = [];
+    if (!wizState.selfieFile  && !wizState.selfiePreview)  missing.push('Selfie');
+    if (!wizState.idFile      && !wizState.idPreview)      missing.push('National ID');
+    if (!wizState.conductFile && !wizState.conductPreview) missing.push('Police Clearance');
+    if (missing.length) {
+      wizShowToast(`Please upload: ${missing.join(', ')}`, 'warning');
+      return false;
+    }
+  }
+  return true;
+}
+
+function wizShakeField(inputId, msg) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  el.classList.add('wiz-shake');
+  el.focus();
+  el.style.borderColor = '#ef4444';
+  el.placeholder = msg;
+  setTimeout(() => { el.classList.remove('wiz-shake'); el.style.borderColor = ''; }, 800);
+}
+
+function wizShowError(containerId, msg) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.classList.add('wiz-shake');
+  wizShowToast(msg, 'warning');
+  setTimeout(() => el.classList.remove('wiz-shake'), 800);
+}
+
+// ── COLLECT STEP DATA ──
+function wizCollectStep(step) {
+  if (step === 1) {
+    wizState.fullName       = document.getElementById('wiz-fullname')?.value.trim() || wizState.fullName;
+    wizState.serviceCategory = document.getElementById('wiz-category')?.value || wizState.serviceCategory;
+    wizState.hourlyRate     = document.getElementById('wiz-rate')?.value || wizState.hourlyRate;
+    wizState.bio            = document.getElementById('wiz-bio')?.value.trim() || wizState.bio;
+  }
+  if (step === 2) {
+    wizState.locationName = document.getElementById('location-name')?.value.trim() || wizState.locationName;
+  }
+}
+
+// ── BIND STEP EVENTS ──
+function bindStepEvents(step) {
+  if (step === 1) {
+    const bio = document.getElementById('wiz-bio');
+    if (bio) {
+      bio.addEventListener('input', () => {
+        const cnt = document.getElementById('wiz-bio-count');
+        if (cnt) cnt.textContent = `${bio.value.length}/200`;
+        if (bio.value.length > 200) bio.value = bio.value.slice(0, 200);
+      });
+    }
+  }
+}
+
+// ── CATEGORY SELECT ──
+function selectWizCat(cat) {
+  wizState.serviceCategory = cat;
+  document.getElementById('wiz-category').value = cat;
+  document.querySelectorAll('.wiz-cat-opt').forEach(el => {
+    el.classList.toggle('selected', el.textContent.trim() === cat);
+  });
+}
+
+// ── LOCATION DETECT ──
+async function wizDetectLocation() {
+  const btn = document.getElementById('wiz-detect-btn');
+  const feedback = document.getElementById('wiz-loc-feedback');
+  if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Detecting…'; btn.disabled = true; }
+  if (feedback) { feedback.style.display = 'none'; }
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    try {
+      const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
+      const data = await res.json();
+      const loc  = data.address.suburb || data.address.neighbourhood || data.address.city_district || data.address.city || 'Kenya';
+      document.getElementById('location-name').value = loc;
+      document.getElementById('lat-coord').value = pos.coords.latitude;
+      document.getElementById('lng-coord').value = pos.coords.longitude;
+      wizState.locationName = loc;
+      if (feedback) {
+        feedback.style.display = 'flex';
+        feedback.innerHTML = `<i class="fas fa-check-circle" style="color:var(--green)"></i> Location set to <strong>${loc}</strong>`;
+      }
+    } catch(e) {
+      document.getElementById('location-name').value = 'Kenya';
+    }
+    if (btn) { btn.innerHTML = '<i class="fas fa-crosshairs"></i> Detect My Location'; btn.disabled = false; }
+  }, () => {
+    if (btn) { btn.innerHTML = '<i class="fas fa-crosshairs"></i> Detect My Location'; btn.disabled = false; }
+    wizShowToast('Could not detect location. Please type it manually.', 'warning');
+  });
+}
+
+// ── FILE HANDLING ──
+function wizHandleFile(inputId, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const MAX = 5 * 1024 * 1024;
+  if (file.size > MAX) { wizShowToast('File is too large. Max 5MB.', 'warning'); input.value = ''; return; }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const preview = file.type.startsWith('image/') ? e.target.result : null;
+    const displaySrc = preview || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24"><path fill="%233db83a" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>';
+
+    if (inputId === 'upload-selfie') {
+      wizState.selfieFile = file; wizState.selfiePreview = displaySrc; wizState.selfieFileName = file.name;
+    } else if (inputId === 'upload-id') {
+      wizState.idFile = file; wizState.idPreview = displaySrc; wizState.idFileName = file.name;
+    } else if (inputId === 'upload-conduct') {
+      wizState.conductFile = file; wizState.conductPreview = displaySrc; wizState.conductFileName = file.name;
+    }
+    wizSave();
+
+    // Refresh the upload zone in-place
+    const zone = document.getElementById(`zone-${inputId}`);
+    if (zone) {
+      zone.classList.add('has-file');
+      zone.innerHTML = `
+        <img src="${displaySrc}" class="wiz-preview-img" alt="Preview">
+        <div class="wiz-file-overlay">
+          <i class="fas fa-check-circle"></i>
+          <span>${file.name}</span>
+          <span class="wiz-change-link">Tap to change</span>
+        </div>`;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── DECLARATION TOGGLE ──
+function wizToggleSubmit() {
+  const checked = document.getElementById('wiz-declaration')?.checked;
+  const btn = document.getElementById('wiz-submit-btn');
+  if (btn) btn.disabled = !checked;
+}
+
+// ── SUBMIT ──
+async function wizSubmit() {
+  const btn = document.getElementById('wiz-submit-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…'; }
+
+  // Final validation
+  if (!wizState.fullName)       { wizShowToast('Missing name — go back to Profile', 'warning'); wizGoTo(1); return; }
+  if (!wizState.locationName)   { wizShowToast('Missing location — go back to Location', 'warning'); wizGoTo(2); return; }
+  if (!wizState.selfieFile && !wizState.selfiePreview)  { wizShowToast('Missing selfie', 'warning'); wizGoTo(3); return; }
+  if (!wizState.idFile && !wizState.idPreview)          { wizShowToast('Missing National ID', 'warning'); wizGoTo(3); return; }
+  if (!wizState.conductFile && !wizState.conductPreview){ wizShowToast('Missing Police Clearance', 'warning'); wizGoTo(3); return; }
+
+  try {
+    const { data: { user } } = await client.auth.getUser();
+
+    const filesToUpload = [
+      { file: wizState.selfieFile,  name: 'selfie',  col: 'selfie_url' },
+      { file: wizState.idFile,      name: 'id',      col: 'id_url' },
+      { file: wizState.conductFile, name: 'conduct', col: 'cert_good_conduct_url' },
+    ].filter(f => f.file); // only upload new files
+
+    let updateData = {
+      full_name:        wizState.fullName,
+      bio:              wizState.bio,
+      service_category: wizState.serviceCategory,
+      hourly_rate:      wizState.hourlyRate ? parseInt(wizState.hourlyRate) : null,
+      location_name:    wizState.locationName,
+      is_vetted:        false,
+    };
+
+    for (const item of filesToUpload) {
+      const ext  = item.file.name.split('.').pop();
+      const path = `${user.id}/${item.name}.${ext}`;
+      const { error: upErr } = await client.storage
+        .from('verification-docs').upload(path, item.file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: urlData } = client.storage.from('verification-docs').getPublicUrl(path);
+      updateData[item.col] = urlData.publicUrl;
+    }
+
+    const { error } = await client.from('profiles').update(updateData).eq('id', user.id);
+    if (error) throw error;
+
+    // Clear wizard state
+    localStorage.removeItem(WIZ_KEY);
+
+    // Show success state
+    const container = document.getElementById('vetting-form');
+    if (container) {
+      container.innerHTML = `
+        <div class="wiz-success">
+          <div class="wiz-success-icon"><i class="fas fa-circle-check"></i></div>
+          <h2>Application Submitted!</h2>
+          <p>Your documents are under review. We'll notify you within 24 hours once approved.</p>
+          <div class="wiz-success-steps">
+            <div class="wiz-success-step done"><i class="fas fa-check"></i> Documents uploaded</div>
+            <div class="wiz-success-step active"><i class="fas fa-clock"></i> Admin review (up to 24 hrs)</div>
+            <div class="wiz-success-step"><i class="fas fa-unlock"></i> Full access unlocked</div>
+          </div>
+        </div>`;
+    }
+  } catch(e) {
+    wizShowToast('Upload failed: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit'; }
+  }
+}
+
+// ── TOAST ──
+function wizShowToast(msg, type = '') {
+  let wrap = document.getElementById('wiz-toast');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'wiz-toast';
+    document.body.appendChild(wrap);
+  }
+  wrap.className = `wiz-toast-el wiz-toast-${type}`;
+  wrap.textContent = msg;
+  wrap.style.display = 'block';
+  clearTimeout(wrap._t);
+  wrap._t = setTimeout(() => { wrap.style.display = 'none'; }, 3200);
+}
+
+// ── HELPER ──
+function escWiz(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── CSS INJECTION ──
+function injectWizardStyles() {
+  if (document.getElementById('wiz-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'wiz-styles';
+  style.textContent = `
+  .wiz-wrap { font-family: var(--font-body, 'DM Sans', sans-serif); }
+
+  /* Progress */
+  .wiz-progress-bar { height: 3px; background: var(--border,#dfe6df); position: relative; }
+  .wiz-progress-fill { height: 100%; background: var(--green,#3db83a); transition: width 0.4s cubic-bezier(0.4,0,0.2,1); border-radius: 0 2px 2px 0; }
+
+  /* Step dots */
+  .wiz-steps-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 16px 0; gap: 4px; }
+  .wiz-step-dot { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+  .wiz-dot-circle {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 2px solid var(--border,#dfe6df);
+    background: white; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: var(--text-muted,#8a9a8a);
+    transition: all 0.25s;
+  }
+  .wiz-step-dot span { font-size: 10px; color: var(--text-muted,#8a9a8a); font-weight: 600; text-align: center; }
+  .wiz-step-dot.active .wiz-dot-circle { border-color: var(--green,#3db83a); background: var(--green,#3db83a); color: white; box-shadow: 0 0 0 4px var(--green-glow,rgba(61,184,58,0.14)); }
+  .wiz-step-dot.active span { color: var(--green-dark,#2a8a28); }
+  .wiz-step-dot.done .wiz-dot-circle { border-color: var(--green,#3db83a); background: var(--green-light,#e8f7e8); color: var(--green,#3db83a); }
+  .wiz-step-dot.done span { color: var(--green-dark,#2a8a28); }
+
+  /* Body */
+  .wiz-body { padding: 16px 16px 8px; min-height: 320px; }
+  .wiz-footer { padding: 12px 16px 18px; border-top: 1px solid var(--border,#dfe6df); }
+  .wiz-footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+  /* Buttons */
+  .wiz-btn-back {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--surface-2,#edf0ed); border: 1.5px solid var(--border,#dfe6df);
+    color: var(--text-mid,#445044); border-radius: 30px;
+    padding: 10px 18px; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: background 0.2s; font-family: inherit;
+  }
+  .wiz-btn-back:hover { background: var(--surface,#f5f7f5); }
+  .wiz-btn-back.invisible { visibility: hidden; pointer-events: none; }
+  .wiz-btn-next {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--green,#3db83a); color: white;
+    border: none; border-radius: 30px;
+    padding: 10px 22px; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: background 0.2s, transform 0.15s; font-family: inherit;
+  }
+  .wiz-btn-next:hover { background: var(--green-dark,#2a8a28); }
+  .wiz-btn-next:active { transform: scale(0.96); }
+  .wiz-btn-submit:disabled { background: var(--text-muted,#8a9a8a); cursor: not-allowed; transform: none; }
+  .wiz-step-counter { font-size: 12px; color: var(--text-muted,#8a9a8a); font-weight: 600; }
+
+  /* Step content */
+  .wiz-step-content { animation: wizFadeIn 0.28s ease; }
+  @keyframes wizFadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .wiz-step-header { text-align: center; margin-bottom: 20px; }
+  .wiz-step-icon {
+    width: 52px; height: 52px; border-radius: 16px;
+    background: var(--green-light,#e8f7e8); color: var(--green,#3db83a);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin: 0 auto 12px;
+  }
+  .wiz-title { font-family: var(--font-display,'Outfit',sans-serif); font-weight: 800; font-size: 20px; color: var(--text,#111811); margin-bottom: 5px; }
+  .wiz-subtitle { font-size: 13px; color: var(--text-muted,#8a9a8a); line-height: 1.5; }
+
+  /* Welcome step */
+  .wiz-welcome { text-align: center; }
+  .wiz-welcome-icon {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--green,#3db83a), var(--green-dark,#2a8a28));
+    color: white; font-size: 28px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px; box-shadow: 0 8px 24px rgba(61,184,58,0.3);
+  }
+  .wiz-checklist { text-align: left; margin: 16px 0; display: flex; flex-direction: column; gap: 8px; }
+  .wiz-check-item { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--text-mid,#445044); }
+  .wiz-check-item i { color: var(--green,#3db83a); font-size: 15px; flex-shrink: 0; }
+  .wiz-what-need { background: var(--surface,#f5f7f5); border-radius: 14px; padding: 14px; margin-top: 16px; }
+  .wiz-need-title { font-size: 12px; font-weight: 700; color: var(--text-muted,#8a9a8a); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+  .wiz-need-grid { display: flex; justify-content: space-around; gap: 8px; }
+  .wiz-need-item { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-mid,#445044); }
+  .wiz-need-item i { font-size: 22px; color: var(--green,#3db83a); }
+
+  /* Fields */
+  .wiz-field { margin-bottom: 14px; }
+  .wiz-label { font-size: 12px; font-weight: 700; color: var(--text-muted,#8a9a8a); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 7px; }
+  .wiz-required { color: #ef4444; }
+  .wiz-input-wrap { position: relative; }
+  .wiz-input-wrap i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-muted,#8a9a8a); font-size: 14px; pointer-events: none; }
+  .wiz-input {
+    width: 100%; padding: 11px 14px 11px 38px;
+    border: 1.5px solid var(--border,#dfe6df);
+    border-radius: 12px; font-size: 14px;
+    color: var(--text,#111811); background: var(--surface-2,#edf0ed);
+    outline: none; margin: 0;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+  }
+  .wiz-input:not(.wiz-input-wrap .wiz-input) { padding-left: 14px; }
+  .wiz-input:focus { border-color: var(--green,#3db83a); background: white; box-shadow: 0 0 0 3px var(--green-glow,rgba(61,184,58,0.14)); }
+  .wiz-textarea { padding-left: 14px; resize: none; height: 80px; line-height: 1.5; }
+  .wiz-hint { font-size: 11px; color: var(--text-muted,#8a9a8a); margin-top: 5px; }
+  .wiz-char-count { font-size: 11px; color: var(--text-muted,#8a9a8a); text-align: right; margin-top: 3px; }
+
+  /* Category grid */
+  .wiz-cat-grid { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 4px; }
+  .wiz-cat-opt {
+    padding: 6px 14px; border-radius: 20px;
+    border: 1.5px solid var(--border,#dfe6df);
+    background: white; font-size: 12px; font-weight: 700;
+    color: var(--text-mid,#445044); cursor: pointer;
+    transition: all 0.18s;
+  }
+  .wiz-cat-opt:hover { border-color: var(--green-mid,#4ecb4b); color: var(--green-dark,#2a8a28); background: var(--green-light,#e8f7e8); }
+  .wiz-cat-opt.selected { background: var(--green,#3db83a); color: white; border-color: var(--green,#3db83a); }
+
+  /* Location */
+  .wiz-detect-btn {
+    width: 100%; padding: 11px;
+    background: var(--green-light,#e8f7e8);
+    border: 1.5px solid var(--green,#3db83a);
+    border-radius: 12px; color: var(--green-dark,#2a8a28);
+    font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer; transition: background 0.2s; font-family: inherit;
+    margin-bottom: 10px;
+  }
+  .wiz-detect-btn:hover { background: #d0f0d0; }
+  .wiz-loc-feedback { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-mid,#445044); margin-bottom: 8px; font-weight: 600; }
+  .wiz-location-tip { display: flex; align-items: flex-start; gap: 9px; font-size: 12px; color: var(--text-muted,#8a9a8a); background: var(--surface,#f5f7f5); border-radius: 10px; padding: 10px 12px; margin-top: 6px; line-height: 1.5; }
+  .wiz-location-tip i { color: var(--green,#3db83a); margin-top: 1px; flex-shrink: 0; }
+
+  /* Document upload */
+  .wiz-doc-field { margin-bottom: 16px; }
+  .wiz-doc-label { font-size: 13px; font-weight: 700; color: var(--text,#111811); margin-bottom: 3px; display: flex; align-items: center; gap: 7px; }
+  .wiz-doc-label i { color: var(--green,#3db83a); }
+  .wiz-doc-hint { font-size: 11px; color: var(--text-muted,#8a9a8a); margin-bottom: 8px; }
+  .wiz-upload-zone {
+    border: 2px dashed var(--border,#dfe6df);
+    border-radius: 14px; min-height: 90px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; overflow: hidden; position: relative;
+    background: var(--surface,#f5f7f5);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .wiz-upload-zone:hover { border-color: var(--green,#3db83a); background: var(--green-light,#e8f7e8); }
+  .wiz-upload-zone.has-file { border-style: solid; border-color: var(--green,#3db83a); background: #f0fdf0; }
+  .wiz-upload-placeholder { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--text-muted,#8a9a8a); padding: 16px; text-align: center; }
+  .wiz-upload-placeholder i { font-size: 26px; color: var(--green,#3db83a); }
+  .wiz-upload-placeholder span { font-size: 13px; font-weight: 700; color: var(--text-mid,#445044); }
+  .wiz-upload-placeholder small { font-size: 11px; }
+  .wiz-preview-img { width: 100%; height: 90px; object-fit: cover; }
+  .wiz-file-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.45); color: white;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    font-size: 12px; font-weight: 700; text-align: center; padding: 8px;
+  }
+  .wiz-file-overlay i { font-size: 20px; color: #4ade80; }
+  .wiz-change-link { font-size: 10px; opacity: 0.75; }
+
+  /* Review */
+  .wiz-review-card { border: 1.5px solid var(--border,#dfe6df); border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+  .wiz-review-row { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--border,#dfe6df); }
+  .wiz-review-row:last-child { border-bottom: none; }
+  .wiz-review-label { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-muted,#8a9a8a); font-weight: 700; min-width: 90px; flex-shrink: 0; }
+  .wiz-review-label i { color: var(--green,#3db83a); width: 14px; text-align: center; }
+  .wiz-review-val { flex: 1; font-size: 13px; font-weight: 600; color: var(--text,#111811); }
+  .wiz-missing { color: #ef4444; font-weight: 600; }
+  .wiz-edit-btn { background: none; border: none; color: var(--text-muted,#8a9a8a); font-size: 13px; cursor: pointer; padding: 4px; border-radius: 6px; transition: color 0.2s, background 0.2s; }
+  .wiz-edit-btn:hover { color: var(--green,#3db83a); background: var(--green-light,#e8f7e8); }
+
+  .wiz-docs-review { margin-bottom: 14px; }
+  .wiz-docs-grid { display: flex; gap: 10px; }
+  .wiz-doc-thumb {
+    flex: 1; border-radius: 12px; overflow: hidden;
+    border: 1.5px solid var(--border,#dfe6df);
+    aspect-ratio: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer;
+    position: relative; background: var(--surface,#f5f7f5);
+    transition: border-color 0.2s;
+  }
+  .wiz-doc-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .wiz-doc-thumb span { font-size: 10px; font-weight: 700; color: var(--text-muted,#8a9a8a); position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; background: rgba(255,255,255,0.85); padding: 2px 0; }
+  .wiz-doc-thumb.missing i { font-size: 22px; color: var(--border,#dfe6df); }
+  .wiz-doc-thumb.ready { border-color: var(--green,#3db83a); }
+  .wiz-thumb-tick {
+    position: absolute; top: 5px; right: 5px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--green,#3db83a); color: white;
+    display: flex; align-items: center; justify-content: center; font-size: 10px;
+  }
+
+  .wiz-warning { display: flex; align-items: center; gap: 9px; background: #fff8ec; border: 1.5px solid #fdd6aa; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #7a4a10; margin-bottom: 12px; }
+  .wiz-warning i { color: #f07623; flex-shrink: 0; }
+  .wiz-text-link { background: none; border: none; color: var(--green-dark,#2a8a28); font-weight: 700; font-size: 13px; cursor: pointer; padding: 0; font-family: inherit; text-decoration: underline; }
+
+  .wiz-declaration { background: var(--surface,#f5f7f5); border-radius: 12px; padding: 12px; margin-bottom: 4px; }
+  .wiz-checkbox-wrap { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .wiz-checkbox-wrap input[type=checkbox] { display: none; }
+  .wiz-checkbox-box {
+    width: 20px; height: 20px; border-radius: 6px;
+    border: 2px solid var(--border,#dfe6df); background: white;
+    flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .wiz-checkbox-wrap input:checked + .wiz-checkbox-box { background: var(--green,#3db83a); border-color: var(--green,#3db83a); }
+  .wiz-checkbox-wrap input:checked + .wiz-checkbox-box::after { content: '✓'; color: white; font-size: 12px; font-weight: 800; }
+  .wiz-checkbox-label { font-size: 12px; color: var(--text-mid,#445044); line-height: 1.5; }
+
+  /* Success */
+  .wiz-success { text-align: center; padding: 32px 20px 28px; }
+  .wiz-success-icon { width: 72px; height: 72px; border-radius: 50%; background: var(--green-light,#e8f7e8); color: var(--green,#3db83a); font-size: 32px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .wiz-success h2 { font-family: var(--font-display,'Outfit',sans-serif); font-weight: 800; font-size: 20px; margin-bottom: 8px; color: var(--text,#111811); }
+  .wiz-success p { font-size: 13px; color: var(--text-muted,#8a9a8a); line-height: 1.6; margin-bottom: 20px; }
+  .wiz-success-steps { display: flex; flex-direction: column; gap: 8px; text-align: left; }
+  .wiz-success-step { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: var(--text-muted,#8a9a8a); padding: 10px 14px; background: var(--surface,#f5f7f5); border-radius: 10px; }
+  .wiz-success-step i { width: 18px; text-align: center; }
+  .wiz-success-step.done { color: var(--green-dark,#2a8a28); background: var(--green-light,#e8f7e8); }
+  .wiz-success-step.done i { color: var(--green,#3db83a); }
+  .wiz-success-step.active { color: #7a4a10; background: #fff8ec; }
+  .wiz-success-step.active i { color: #f07623; }
+
+  /* Shake animation */
+  .wiz-shake { animation: wizShake 0.5s; }
+  @keyframes wizShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+
+  /* Toast */
+  #wiz-toast {
+    position: fixed; bottom: calc(var(--bottom-nav-h,64px) + 14px); left: 50%; transform: translateX(-50%);
+    padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 700;
+    white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    z-index: 9000; animation: wizFadeIn 0.25s ease;
+  }
+  .wiz-toast-warning { background: #f07623; color: white; }
+  .wiz-toast-error   { background: #ef4444; color: white; }
+  .wiz-toast-        { background: #111; color: white; }
+  `;
+  document.head.appendChild(style);
+}
+
+// Expose globals
+window.initOnboardingWizard = initOnboardingWizard;
+window.wizNext        = wizNext;
+window.wizBack        = wizBack;
+window.wizGoTo        = wizGoTo;
+window.wizSubmit      = wizSubmit;
+window.selectWizCat   = selectWizCat;
+window.wizDetectLocation = wizDetectLocation;
+window.wizHandleFile  = wizHandleFile;
+window.wizToggleSubmit = wizToggleSubmit;
