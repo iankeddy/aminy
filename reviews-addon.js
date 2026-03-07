@@ -391,8 +391,8 @@ async function loadClientBookings() {
       .from('bookings')
       .select(`
         id, status, created_at, job_id,
-        helper:helper_id ( id, full_name, service_category, avg_rating, selfie_url ),
-        job:job_id ( title, budget )
+        helper:profiles!helper_id ( id, full_name, service_category, avg_rating, selfie_url ),
+        job:jobs!job_id ( title, budget )
       `)
       .eq('client_id', user.id)
       .order('created_at', { ascending: false });
@@ -474,8 +474,8 @@ async function loadHelperRequests() {
       .from('bookings')
       .select(`
         id, status, created_at,
-        job:job_id ( id, title, description, budget, category ),
-        client:client_id ( full_name, email )
+        job:jobs!job_id ( id, title, description, budget, category ),
+        client:profiles!client_id ( full_name, email )
       `)
       .eq('helper_id', user.id)
       .eq('status', 'pending')
@@ -527,8 +527,8 @@ async function loadHelperActiveJobs() {
       .from('bookings')
       .select(`
         id, status, created_at,
-        job:job_id ( title, budget, category ),
-        client:client_id ( full_name )
+        job:jobs!job_id ( title, budget, category ),
+        client:profiles!client_id ( full_name )
       `)
       .eq('helper_id', user.id)
       .in('status', ['accepted'])
@@ -572,7 +572,7 @@ async function loadHelperReviews(helperId) {
       .from('reviews')
       .select(`
         id, rating, comment, created_at,
-        client:client_id ( full_name )
+        client:profiles!client_id ( full_name )
       `)
       .eq('helper_id', helperId)
       .order('created_at', { ascending: false })
