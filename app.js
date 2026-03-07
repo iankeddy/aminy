@@ -785,12 +785,17 @@ async function confirmHire() {
       is_read: false
     }]);
 
-    // Also update booking status if job_id exists
+    // Update booking status and flip job off the open marketplace
     if (chatActiveThread.jobId) {
       await client.from('bookings')
         .update({ status: 'accepted' })
         .eq('job_id', chatActiveThread.jobId)
         .eq('helper_id', chatActiveThread.recipientId);
+
+      // Remove job from available listings — status 'in_progress' hides it from open queries
+      await client.from('jobs')
+        .update({ status: 'in_progress' })
+        .eq('id', chatActiveThread.jobId);
     }
 
     alert(`Hire request sent to ${chatActiveThread.recipientName}!`);

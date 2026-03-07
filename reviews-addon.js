@@ -362,6 +362,13 @@ async function submitReview() {
       .update({ status: 'completed' })
       .eq('id', bookingId);
 
+    // Mark the job itself as completed so it stays off the marketplace
+    if (booking?.job_id) {
+      await client.from('jobs')
+        .update({ status: 'completed' })
+        .eq('id', booking.job_id);
+    }
+
     closeRatingModal();
     reviewToast('⭐ Review submitted! Thank you.', 'green');
 
