@@ -271,14 +271,14 @@
             const vettingForm = document.getElementById("vetting-form");
             if (vettingForm) {
               vettingForm.style.padding = '0';
-              vettingForm.innerHTML = \`
+              vettingForm.innerHTML = `
                 <div style="text-align:center;padding:32px 20px">
                   <div style="width:60px;height:60px;border-radius:50%;background:#fff8ec;color:#f07623;font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
                     <i class="fas fa-clock"></i>
                   </div>
                   <div style="font-family:var(--font-display);font-weight:800;font-size:18px;margin-bottom:6px">Under Review</div>
                   <div style="font-size:13px;color:var(--text-muted);line-height:1.6">Your documents have been submitted and are being reviewed by our team. You'll be notified within 24 hours.</div>
-                </div>\`;
+                </div>`;
             }
           } else {
             // Documents not yet submitted — launch wizard
