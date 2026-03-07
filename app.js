@@ -798,7 +798,17 @@ async function confirmHire() {
         .eq('id', chatActiveThread.jobId);
     }
 
-    alert(`Hire request sent to ${chatActiveThread.recipientName}!`);
+    // Refresh dashboard lists so applicant moves from "Applied" → "Hired"
+    setTimeout(() => {
+      loadClientApplicants?.();
+      loadClientBookings?.();
+    }, 500);
+
+    showModal?.('✅ Hired!', `You have hired ${chatActiveThread.recipientName}. They have been notified. The job has been removed from the marketplace.`);
+    // Fallback if showModal not available
+    if (!document.getElementById('custom-modal')) {
+      alert(`✅ You've hired ${chatActiveThread.recipientName}! The job is now in progress.`);
+    }
   } catch (e) {
     alert('Error: ' + e.message);
   }

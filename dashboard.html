@@ -103,6 +103,13 @@
       </button>
     </div>
 
+    <!-- Who Applied — applicants waiting for client to chat & hire -->
+    <div class="card" style="border-top:3px solid #3db83a">
+      <h3><i class="fas fa-bell"></i> Job Applications</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin:-4px 0 12px">Helpers who applied for your jobs — chat with them before hiring.</p>
+      <div id="client-applicants-list">Loading...</div>
+    </div>
+
     <!-- My Helpers -->
     <div class="card">
       <h3><i class="fas fa-calendar-check"></i> My Hired Helpers</h3>
@@ -205,6 +212,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script src="reviews-addon.js"></script>
+<!-- reviews-addon.js must be v2 -->
 
 <!-- KEEP YOUR EXISTING AUTH + ROLE SCRIPT EXACTLY AS IS -->
 <script>
@@ -289,6 +297,7 @@
 
       // Load role-specific dashboard data
       if (profile.role === 'client') {
+        loadClientApplicants?.();
         loadClientBookings?.();
       }
       if (profile.role === 'helper' && profile.is_vetted === true) {

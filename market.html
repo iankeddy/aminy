@@ -858,7 +858,7 @@ function helperCardHTML(h, i) {
   return `<div class="helper-card" onclick="openHelperModal('${h.id}')" style="animation-delay:${i*0.05}s">
     <div class="helper-img-wrap">
       ${hasImg
-        ? `<img src="${h.selfie_url}" alt="${h.full_name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        ? `<img src="${h.selfie_url}" alt="${h.full_name}"  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         : ''}
       <div class="helper-default-avatar" style="background:linear-gradient(135deg,${color},${color}bb);${hasImg?'display:none':''}">${initials(h.full_name)}</div>
       <div class="vetted-chip"><i class="fas fa-shield-check"></i> Vetted</div>
@@ -1073,19 +1073,41 @@ async function applyForJob(jobId) {
   if(currentProfile?.is_vetted !== true) { showToast('Your account is pending verification','orange'); return; }
   if(appliedJobs.has(jobId)) { showToast('Already applied!'); return; }
 
+  const job = allJobs.find(j => j.id === jobId);
+  if (!job) { showToast('Job not found','orange'); return; }
+
   try {
-    const { error } = await db.from('bookings').insert([{
-      job_id: jobId, helper_id: currentUser.id,
-      client_id: allJobs.find(j=>j.id===jobId)?.client_id,
+    // 1. Create the booking (pending)
+    const { error: bookingErr } = await db.from('bookings').insert([{
+      job_id: jobId,
+      helper_id: currentUser.id,
+      client_id: job.client_id,
       status: 'pending'
     }]);
-    if(error) throw error;
+    if (bookingErr) throw bookingErr;
+
+    // 2. Send an intro message to the client so both land in each other's inbox
+    //    and the client has the job context to open the right thread
+    const helperName = currentProfile?.full_name || 'A helper';
+    const introMsg = `Hi! I'm interested in your job "${job.title || 'your job'}". I've applied and would love to discuss the details with you.`;
+
+    const { error: msgErr } = await db.from('messages').insert([{
+      sender_id: currentUser.id,
+      recipient_id: job.client_id,
+      job_id: jobId,
+      content: introMsg,
+      is_read: false
+    }]);
+    // Message failure is non-fatal — booking still counts
+    if (msgErr) console.warn('Intro message failed:', msgErr.message);
+
     appliedJobs.add(jobId);
-    showToast('✅ Application sent!','green');
+    showToast('✅ Application sent! The client has been notified.', 'green');
     closeModal('job-modal');
     applyFilters();
+
   } catch(e) {
-    showToast('Error: '+e.message,'orange');
+    showToast('Error: ' + e.message, 'orange');
   }
 }
 

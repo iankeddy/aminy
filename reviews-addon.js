@@ -383,6 +383,87 @@ async function submitReview() {
 }
 
 
+
+// ── LOAD CLIENT JOB APPLICANTS ───────────────────────────────
+// Shows helpers who have applied (pending bookings) for the client's jobs
+// This is the key handshake — client sees applicants and can open chat
+async function loadClientApplicants() {
+  const container = document.getElementById('client-applicants-list');
+  if (!container) return;
+  container.innerHTML = '<p style="color:#8a9a8a;font-size:13px">Checking…</p>';
+
+  try {
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return;
+
+    // Get all pending bookings on jobs posted by this client
+    const { data: bookings, error } = await client
+      .from('bookings')
+      .select(`
+        id, status, created_at, job_id,
+        helper:profiles!helper_id ( id, full_name, avg_rating, total_jobs, service_category ),
+        job:jobs!job_id ( id, title, budget, category )
+      `)
+      .eq('client_id', user.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    if (!bookings || bookings.length === 0) {
+      container.innerHTML = '<p style="color:#8a9a8a;font-size:13px;text-align:center;padding:16px 0">No pending applications yet.</p>';
+      return;
+    }
+
+    container.innerHTML = bookings.map(b => {
+      const helper = b.helper || {};
+      const job    = b.job    || {};
+      const color  = colorFor(helper.full_name || 'H');
+      const rating = parseFloat(helper.avg_rating) || 0;
+      const starsHtml = rating > 0 ? renderStarsHTML(rating, 11) + ` <span style="font-size:11px;color:#3a4d3a">${rating.toFixed(1)}</span>` : '<span style="font-size:11px;color:#8a9a8a">New helper</span>';
+
+      return `
+        <div class="booking-card" style="border-left:3px solid #3db83a">
+          <div class="booking-top">
+            <div class="booking-avatar" style="background:${color}">${initials(helper.full_name)}</div>
+            <div style="flex:1">
+              <div class="booking-name">${helper.full_name || 'Helper'}</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:2px">${starsHtml}</div>
+            </div>
+            <div class="booking-status-chip status-pending">Applied</div>
+          </div>
+          ${job.title ? `<div class="booking-job-title">📌 For: ${job.title}${job.budget ? ` · ${job.budget}` : ''}</div>` : ''}
+          <div class="booking-footer">
+            <div class="booking-date">${timeAgoShort(b.created_at)}</div>
+            <button class="btn-complete-rate" style="background:#3b82f6" 
+              onclick="chatWithApplicant('${helper.id}','${(helper.full_name||'').replace(/'/g,"\'")}','${job.id || ''}')">
+              <i class="fas fa-comments"></i> Chat & Review
+            </button>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (err) {
+    container.innerHTML = `<p style="color:#f07623;font-size:13px">Error: ${err.message}</p>`;
+  }
+}
+
+// Opens chat thread with the applicant — job context is passed so
+// the "Confirm Hire" button in the chat header knows which job to accept
+function chatWithApplicant(helperId, helperName, jobId) {
+  if (typeof startChatWith === 'function') {
+    startChatWith(helperId, helperName, jobId || null);
+  } else {
+    // Fallback: set localStorage and navigate to dashboard
+    localStorage.setItem('openChat', 'true');
+    localStorage.setItem('chatRecipientId', helperId);
+    localStorage.setItem('chatRecipientName', helperName);
+    if (jobId) localStorage.setItem('chatJobId', jobId);
+    window.location.href = 'dashboard.html';
+  }
+}
+
+
 // ── LOAD CLIENT BOOKINGS ──────────────────────────────────────
 async function loadClientBookings() {
   const container = document.getElementById('my-bookings-list');
@@ -613,6 +694,8 @@ async function loadHelperReviews(helperId) {
 
 
 // ── EXPOSE GLOBALS ────────────────────────────────────────────
+window.loadClientApplicants = loadClientApplicants;
+window.chatWithApplicant    = chatWithApplicant;
 window.loadClientBookings   = loadClientBookings;
 window.loadHelperRequests   = loadHelperRequests;
 window.loadHelperActiveJobs = loadHelperActiveJobs;
