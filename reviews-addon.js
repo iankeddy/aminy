@@ -391,7 +391,7 @@ async function loadClientBookings() {
       .from('bookings')
       .select(`
         id, status, created_at, job_id,
-        helper:profiles!helper_id ( id, full_name, service_category, avg_rating, selfie_url ),
+        helper:profiles!helper_id ( id, full_name, avg_rating, selfie_url ),
         job:jobs!job_id ( title, budget )
       `)
       .eq('client_id', user.id)
@@ -433,7 +433,7 @@ async function loadClientBookings() {
             <div class="booking-avatar" style="background:${color}">${initials(helper.full_name)}</div>
             <div>
               <div class="booking-name">${helper.full_name || 'Helper'}</div>
-              <div class="booking-category">${helper.service_category || 'General'}</div>
+              <div class="booking-category">Helper</div>
             </div>
             <div class="booking-status-chip ${statusClass}">${statusLabel}</div>
           </div>
