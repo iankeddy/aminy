@@ -84,11 +84,18 @@
       
       <select id="job-category">
   <option value="">Select Category</option>
-  <option value="cleaning">Cleaning</option>
-  <option value="delivery">Delivery</option>
-  <option value="repairs">Repairs</option>
-  <option value="shopping">Shopping</option>
-  <option value="transport">Transport</option>
+  <option value="cleaning">🧹 Cleaning</option>
+  <option value="delivery">🚚 Delivery</option>
+  <option value="repairs">🔧 Repairs</option>
+  <option value="shopping">🛒 Shopping</option>
+  <option value="transport">🚗 Transport</option>
+  <option value="petcare">🐾 Pet Care</option>
+  <option value="gardening">🌿 Gardening</option>
+  <option value="laundry">👕 Laundry</option>
+  <option value="moving">📦 Moving</option>
+  <option value="tutoring">📚 Tutoring</option>
+  <option value="events">🎉 Events</option>
+  <option value="security">🔒 Security</option>
 </select>
 
       <button onclick="handlePostJob()" class="btn-primary full">
@@ -197,6 +204,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="reviews-addon.js"></script>
 
 <!-- KEEP YOUR EXISTING AUTH + ROLE SCRIPT EXACTLY AS IS -->
 <script>
@@ -279,7 +287,14 @@
         }
       }
 
-      // Optional safe loads
+      // Load role-specific dashboard data
+      if (profile.role === 'client') {
+        loadClientBookings?.();
+      }
+      if (profile.role === 'helper' && profile.is_vetted === true) {
+        loadHelperRequests?.();
+        loadHelperActiveJobs?.();
+      }
       loadMarketplaceJobs?.();
       loadChatList?.();
 

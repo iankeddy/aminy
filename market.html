@@ -645,6 +645,7 @@ body {
     </div>
     <div id="vetted-flag"></div>
     <div class="modal-body" id="modal-body-content"></div>
+    <div id="modal-reviews-wrap" style="border-top:1px solid #edf3ed"></div>
     <div class="modal-cta" id="modal-cta"></div>
   </div>
 </div>
@@ -932,6 +933,16 @@ async function openHelperModal(id) {
       <i class="fas fa-handshake"></i> Hire ${(h.full_name||'').split(' ')[0]}
     </button>
   `;
+
+  // Inject reviews section below modal body
+  const reviewsWrap = document.getElementById('modal-reviews-wrap');
+  if (reviewsWrap) {
+    reviewsWrap.innerHTML = '<div style="padding:16px 20px 4px;font-size:12px;color:#8a9a8a;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Loading reviews…</div>';
+    loadHelperReviews?.(h.id).then(html => {
+      reviewsWrap.innerHTML = html || '<div class="no-reviews">No reviews yet — be the first to hire!</div>';
+    });
+  }
+
   document.getElementById('helper-modal').classList.add('open');
 }
 
@@ -1135,5 +1146,6 @@ function showToast(msg, type='') {
   toastTimer = setTimeout(() => { wrap.style.display='none'; }, 3000);
 }
 </script>
+<script src="reviews-addon.js"></script>
 </body>
 </html>
