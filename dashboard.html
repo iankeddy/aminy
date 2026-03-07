@@ -121,6 +121,19 @@
   <!-- HELPER SECTION -->
   <section id="helper-section" style="display:none;">
 
+    <!-- My Gigs -->
+    <div class="card" id="my-gigs-card" style="display:none">
+      <h3><i class="fas fa-store" style="color:#3db83a"></i> My Gigs
+        <span style="margin-left:auto;font-size:11px;font-weight:600;color:#8a9a8a;cursor:pointer" onclick="openGigSheet()">
+          + New Gig
+        </span>
+      </h3>
+      <p style="font-size:12px;color:#8a9a8a;margin:-4px 0 12px;line-height:1.5">
+        Your gigs appear on the Marketplace. Create one gig per service you offer.
+      </p>
+      <div id="my-gigs-grid"></div>
+    </div>
+
     <!-- Requests -->
     <div class="card highlight">
       <h3><i class="fas fa-bell"></i> New Job Requests</h3>
@@ -212,7 +225,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script src="reviews-addon.js"></script>
-<!-- reviews-addon.js must be v2 -->
+<script src="gig-manager.js"></script>
 
 <!-- KEEP YOUR EXISTING AUTH + ROLE SCRIPT EXACTLY AS IS -->
 <script>
@@ -301,6 +314,10 @@
         loadClientBookings?.();
       }
       if (profile.role === 'helper' && profile.is_vetted === true) {
+        // Show and load gigs section
+        const gigsCard = document.getElementById('my-gigs-card');
+        if (gigsCard) gigsCard.style.display = 'block';
+        loadMyGigs?.();
         loadHelperRequests?.();
         loadHelperActiveJobs?.();
       }
