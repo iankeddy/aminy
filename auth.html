@@ -214,13 +214,20 @@
           </div>
         </div>
         <input type="hidden" id="signup-role-val" value="client">
-        <button class="btn-primary full" onclick="handleSignup()">
+
+        <!-- Terms consent checkbox -->
+        <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;cursor:pointer;font-size:12px;color:var(--text-muted);line-height:1.5">
+          <input type="checkbox" id="terms-consent" style="margin-top:2px;width:16px;height:16px;accent-color:var(--green);flex-shrink:0;">
+          I agree to Aminy's <a href="terms.html" style="color:var(--green-dark);font-weight:700;text-decoration:none" target="_blank">Terms of Service</a> and <a href="privacy.html" style="color:var(--green-dark);font-weight:700;text-decoration:none" target="_blank">Privacy Policy</a>
+        </label>
+
+        <button class="btn-primary full" id="signup-btn" onclick="handleSignup()" disabled style="opacity:0.5;cursor:not-allowed">
           <i class="fas fa-user-plus"></i> Create Account
         </button>
       </div>
 
       <div class="auth-footer">
-        By continuing you agree to Aminy's Terms of Service &amp; Privacy Policy
+        By creating an account you agree to Aminy's <a href="terms.html" style="color:var(--green-dark);font-weight:700">Terms of Service</a> &amp; <a href="privacy.html" style="color:var(--green-dark);font-weight:700">Privacy Policy</a>
       </div>
     </div>
   </div>
@@ -261,8 +268,16 @@
     document.getElementById('signup-tab').classList.toggle('active', !isLogin);
   }
 
-  function forgotPassword() {
-    alert('Password reset coming soon!');
+  async function forgotPassword() {
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) { showModal('Enter Your Email', 'Please type your email address in the field above first.'); return; }
+    toggleLoader(true);
+    const { error } = await client.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/reset-password.html'
+    });
+    toggleLoader(false);
+    if (error) { showModal('Error', error.message); }
+    else { showModal('Email Sent ✅', 'A password reset link has been sent to ' + email + '. Please check your inbox.'); }
   }
 
   function handleLogin() {
@@ -281,6 +296,19 @@
     if (pass.length < 6) { showModal('Weak Password', 'Password must be at least 6 characters.'); return; }
     signUp(email, pass, role, name);
   }
+
+  // Enable/disable signup button based on checkbox
+  document.addEventListener('DOMContentLoaded', () => {
+    const cb = document.getElementById('terms-consent');
+    const btn = document.getElementById('signup-btn');
+    if (cb && btn) {
+      cb.addEventListener('change', () => {
+        btn.disabled = !cb.checked;
+        btn.style.opacity = cb.checked ? '1' : '0.5';
+        btn.style.cursor = cb.checked ? 'pointer' : 'not-allowed';
+      });
+    }
+  });
 
   // Enter key support
   document.addEventListener('keydown', e => {
