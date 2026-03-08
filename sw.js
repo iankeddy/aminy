@@ -32,8 +32,8 @@ self.addEventListener('push', (event) => {
   const title   = data.title   || 'Aminy';
   const options = {
     body:    data.body    || '',
-    icon:    data.icon    || '/images/aminy-logo.png',
-    badge:   data.badge   || '/images/aminy-logo.png',
+    icon:    data.icon    || '/aminy-main/images/icon-192.png',
+    badge:   data.badge   || '/aminy-main/images/icon-badge.png',
     tag:     data.tag     || 'aminy-notif',          // replaces previous notif of same tag
     renotify: true,
     data:    data.data    || {},                      // passed to notificationclick
