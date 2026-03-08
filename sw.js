@@ -55,12 +55,12 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   const notifData = event.notification.data || {};
-  let targetUrl   = '/dashboard.html';
+  let targetUrl = 'dashboard.html';
 
   // Route to the right page based on notification type
-  if (notifData.type === 'new_helper')  targetUrl = '/admin.html';
-  else if (notifData.type === 'new_job') targetUrl = '/admin.html';
-  else if (notifData.job_id || notifData.booking_id) targetUrl = '/dashboard.html';
+  if (notifData.type === 'new_helper')  targetUrl = 'admin.html';
+  else if (notifData.type === 'new_job') targetUrl = 'admin.html';
+  else if (notifData.job_id || notifData.booking_id) targetUrl = 'dashboard.html';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

@@ -586,7 +586,7 @@
   async function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) return null;
     try {
-      const reg = await navigator.serviceWorker.register('sw.js', { scope: '/' });
+      const reg = await navigator.serviceWorker.register('sw.js', { scope: './' });
       _swRegistration = reg;
       // Send VAPID key to SW for re-subscribe handling
       if (reg.active) {

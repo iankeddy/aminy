@@ -29,14 +29,14 @@
       "name": "Browse Gigs",
       "short_name": "Market",
       "description": "Browse available services",
-      "url": "/market.html",
+      "url": "/aminy-main/market.html",
       "icons": [{ "src": "images/aminy-logo.png", "sizes": "96x96" }]
     },
     {
       "name": "My Dashboard",
       "short_name": "Dashboard",
       "description": "View your dashboard",
-      "url": "/dashboard.html",
+      "url": "/aminy-main/dashboard.html",
       "icons": [{ "src": "images/aminy-logo.png", "sizes": "96x96" }]
     }
   ],
