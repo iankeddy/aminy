@@ -1,0 +1,45 @@
+{
+  "name": "Aminy — Trusted Local Services",
+  "short_name": "Aminy",
+  "description": "Find trusted local helpers in Kenya for cleaning, delivery, repairs and more.",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#3db83a",
+  "lang": "en-KE",
+  "categories": ["lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "images/aminy-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/aminy-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Gigs",
+      "short_name": "Market",
+      "description": "Browse available services",
+      "url": "/market.html",
+      "icons": [{ "src": "images/aminy-logo.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "My Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your dashboard",
+      "url": "/dashboard.html",
+      "icons": [{ "src": "images/aminy-logo.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

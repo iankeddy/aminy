@@ -13,6 +13,11 @@
   let _notifAll        = [];
   let _panelOpen       = false;
 
+  // ── PWA / PUSH STATE ──────────────────────────────────────
+  const VAPID_PUBLIC_KEY = 'BNbcuKENfrcqh36ldyoxGv_0Tjr_3jDgHqgpnexRzXPt6Dqe3VnslDuGTY2slNhiiuPkINE6Hg1l_0mSfP7BlQE';
+  let _swRegistration    = null;
+  let _pushGranted       = false;
+
   // ── NOTIFICATION ICONS / COLOURS ──────────────────────────
   const NOTIF_META = {
     new_application: { icon: 'fa-file-lines',     color: '#3b82f6', bg: '#eff6ff' },
@@ -222,6 +227,66 @@
       }
       .notif-footer a:hover { color: #3db83a; }
 
+
+      /* ── PUSH PERMISSION PROMPT ── */
+      #push-prompt {
+        position: fixed;
+        bottom: calc(68px + 12px);
+        left: 50%; transform: translateX(-50%) translateY(20px);
+        background: white;
+        border: 1.5px solid #c8e0c8;
+        border-radius: 18px;
+        padding: 14px 18px;
+        display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+        z-index: 4000;
+        max-width: 340px; width: calc(100% - 32px);
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.3s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      }
+      #push-prompt.show {
+        opacity: 1; pointer-events: all;
+        transform: translateX(-50%) translateY(0);
+      }
+      .push-prompt-icon {
+        width: 40px; height: 40px; border-radius: 12px;
+        background: #e8f7e8; color: #3db83a;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; flex-shrink: 0;
+      }
+      .push-prompt-text { flex: 1; }
+      .push-prompt-text strong {
+        display: block; font-size: 13px; font-weight: 700;
+        color: #0d1a0d; margin-bottom: 2px;
+      }
+      .push-prompt-text span { font-size: 11px; color: #5a6a5a; line-height: 1.4; }
+      .push-prompt-actions { display: flex; gap: 6px; flex-shrink: 0; }
+      .btn-push-allow {
+        padding: 7px 14px; border-radius: 20px;
+        background: #3db83a; color: white; border: none;
+        font-size: 12px; font-weight: 700; cursor: pointer;
+        transition: background 0.15s;
+      }
+      .btn-push-allow:hover { background: #2a8a28; }
+      .btn-push-dismiss {
+        padding: 7px 10px; border-radius: 20px;
+        background: #f0f5f0; color: #5a6a5a; border: none;
+        font-size: 12px; cursor: pointer;
+        transition: background 0.15s;
+      }
+      .btn-push-dismiss:hover { background: #e0ede0; }
+
+      /* Push enabled indicator in panel footer */
+      .push-status-row {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 12px; font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .push-status-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+      }
+      .push-status-dot.on  { background: #3db83a; }
+      .push-status-dot.off { background: #9aaa9a; }
       /* Mobile: full-width panel */
       @media (max-width: 420px) {
         #notif-panel { width: 100vw; }
@@ -514,11 +579,185 @@
   }
 
 
+
+  // ── PWA & PUSH FUNCTIONS ─────────────────────────────────
+
+  // Register service worker
+  async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return null;
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      _swRegistration = reg;
+      // Send VAPID key to SW for re-subscribe handling
+      if (reg.active) {
+        reg.active.postMessage({ type: 'SET_VAPID_KEY', key: VAPID_PUBLIC_KEY });
+      }
+      return reg;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Convert VAPID public key to Uint8Array
+  function vapidKeyToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw     = atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  // Subscribe browser to push
+  async function subscribeToPush() {
+    if (!_swRegistration) return null;
+    try {
+      const existing = await _swRegistration.pushManager.getSubscription();
+      if (existing) return existing;
+
+      const sub = await _swRegistration.pushManager.subscribe({
+        userVisibleOnly:      true,
+        applicationServerKey: vapidKeyToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      return sub;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Save subscription to Supabase
+  async function saveSubscription(sub) {
+    if (!_notifUser || !sub) return;
+    const supaClient = window.client || window.db;
+    if (!supaClient) return;
+
+    const json = sub.toJSON();
+    try {
+      await supaClient.from('push_subscriptions').upsert({
+        user_id:    _notifUser.id,
+        endpoint:   json.endpoint,
+        p256dh:     json.keys?.p256dh,
+        auth:       json.keys?.auth,
+        user_agent: navigator.userAgent.slice(0, 200),
+        last_used_at: new Date().toISOString(),
+      }, { onConflict: 'endpoint' });
+    } catch (e) {}
+  }
+
+  // Remove subscription from Supabase (on explicit disable)
+  async function removeSubscription() {
+    if (!_notifUser || !_swRegistration) return;
+    const supaClient = window.client || window.db;
+    if (!supaClient) return;
+
+    try {
+      const sub = await _swRegistration.pushManager.getSubscription();
+      if (sub) {
+        await supaClient
+          .from('push_subscriptions')
+          .delete()
+          .eq('endpoint', sub.endpoint);
+        await sub.unsubscribe();
+      }
+    } catch (e) {}
+  }
+
+  // Show permission prompt (once per device, 3 days after dismiss)
+  function showPushPrompt() {
+    if (document.getElementById('push-prompt')) return;
+    if (localStorage.getItem('push_dismissed_until')) {
+      const until = parseInt(localStorage.getItem('push_dismissed_until'));
+      if (Date.now() < until) return;
+    }
+
+    const prompt = document.createElement('div');
+    prompt.id = 'push-prompt';
+    prompt.innerHTML = `
+      <div class="push-prompt-icon"><i class="fas fa-bell"></i></div>
+      <div class="push-prompt-text">
+        <strong>Stay in the loop</strong>
+        <span>Get notified about jobs, messages & hires — even when the app is closed.</span>
+      </div>
+      <div class="push-prompt-actions">
+        <button class="btn-push-allow" onclick="window._allowPush()">Allow</button>
+        <button class="btn-push-dismiss" onclick="window._dismissPush()">✕</button>
+      </div>`;
+    document.body.appendChild(prompt);
+    // Animate in
+    setTimeout(() => prompt.classList.add('show'), 100);
+  }
+
+  window._allowPush = async function() {
+    const prompt = document.getElementById('push-prompt');
+    if (prompt) { prompt.classList.remove('show'); setTimeout(() => prompt.remove(), 300); }
+
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      _pushGranted = true;
+      const sub = await subscribeToPush();
+      if (sub) {
+        await saveSubscription(sub);
+        updatePushStatusInPanel();
+      }
+    }
+    localStorage.setItem('push_asked', '1');
+  };
+
+  window._dismissPush = function() {
+    const prompt = document.getElementById('push-prompt');
+    if (prompt) { prompt.classList.remove('show'); setTimeout(() => prompt.remove(), 300); }
+    // Don't ask again for 3 days
+    localStorage.setItem('push_dismissed_until', String(Date.now() + 3 * 86400000));
+  };
+
+  // Update push status line in the notification panel footer
+  function updatePushStatusInPanel() {
+    const footer = document.querySelector('.notif-footer');
+    if (!footer) return;
+    const perm = Notification.permission;
+    const isOn = perm === 'granted' && _pushGranted;
+    footer.innerHTML = `
+      <div class="push-status-row">
+        <div class="push-status-dot ${isOn ? 'on' : 'off'}"></div>
+        <span style="color:#5a6a5a">${isOn ? 'Push notifications on' : 'Push notifications off'}</span>
+        ${!isOn && perm !== 'denied'
+          ? '<button onclick="window._allowPush()" style="margin-left:auto;background:none;border:none;color:#3db83a;font-size:12px;font-weight:700;cursor:pointer">Enable</button>'
+          : ''}
+        ${isOn ? '<button onclick="window._disablePush()" style="margin-left:auto;background:none;border:none;color:#9aaa9a;font-size:12px;cursor:pointer">Disable</button>' : ''}
+      </div>
+      <a href="#" style="font-size:11px;color:#9aaa9a">Notification preferences coming soon</a>`;
+  }
+
+  window._disablePush = async function() {
+    await removeSubscription();
+    _pushGranted = false;
+    updatePushStatusInPanel();
+  };
+
+  // Handle SW message about subscription change
+  navigator.serviceWorker?.addEventListener('message', async (event) => {
+    if (event.data?.type === 'PUSH_SUBSCRIPTION_CHANGED') {
+      const sub = event.data.subscription;
+      if (sub && _notifUser) {
+        const supaClient = window.client || window.db;
+        if (supaClient) {
+          await supaClient.from('push_subscriptions').upsert({
+            user_id:  _notifUser.id,
+            endpoint: sub.endpoint,
+            p256dh:   sub.keys?.p256dh,
+            auth:     sub.keys?.auth,
+          }, { onConflict: 'endpoint' });
+        }
+      }
+    }
+  });
+
   // ── INIT ─────────────────────────────────────────────────
   async function initNotifications() {
     injectStyles();
     injectBell();
     injectPanel();
+
+    // Register service worker (non-blocking)
+    registerServiceWorker();
 
     // Wait for Supabase client
     const supaClient = window.client || window.db;
@@ -531,6 +770,21 @@
 
       await loadNotifications();
       subscribeToNotifications();
+
+      // Check push permission state
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          _pushGranted = true;
+          // Ensure subscription is saved (e.g. after reinstall)
+          const sub = await subscribeToPush();
+          if (sub) await saveSubscription(sub);
+        } else if (Notification.permission === 'default') {
+          // Show prompt after a short delay — don't interrupt the page load
+          setTimeout(showPushPrompt, 8000);
+        }
+      }
+      updatePushStatusInPanel();
+
     } catch (e) {}
   }
 
