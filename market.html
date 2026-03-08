@@ -11,6 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="Aminy">
   <link rel="apple-touch-icon" href="images/icon-192.png">
 <title>Aminy Marketplace — Errands, Done Right.</title>
+<link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="nav-drawer.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -76,34 +77,7 @@ body {
 .icon-btn:hover { background: var(--surface); }
 
 /* ── DRAWER ── */
-.app-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 2000; backdrop-filter: blur(4px); }
-.app-menu.hidden { display: none !important; }
-.menu-content {
-  width: 270px; height: 100%; background: white;
-  padding: 28px 20px; display: flex; flex-direction: column; gap: 6px;
-  box-shadow: 4px 0 24px rgba(0,0,0,0.12);
-  animation: slideInLeft 0.28s cubic-bezier(0.4,0,0.2,1);
-}
-@keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-.menu-brand {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
-  padding-bottom: 20px; border-bottom: 1px solid var(--border);
-}
-.menu-brand-icon {
-  width: 36px; height: 36px; background: var(--green);
-  border-radius: 10px; display: flex; align-items: center; justify-content: center;
-  font-family: 'Outfit', sans-serif; font-weight: 900; color: white; font-size: 16px;
-}
-.menu-brand-name { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 18px; }
-.menu-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px; border-radius: var(--radius-sm);
-  font-size: 15px; font-weight: 500; color: var(--text-mid);
-  cursor: pointer; transition: background var(--t), color var(--t); border: none; background: none;
-  text-align: left; width: 100%;
-}
-.menu-item:hover { background: var(--green-light); color: var(--green-dark); }
-.menu-item i { width: 18px; text-align: center; color: var(--green); }
+/* menu styles from style.css */
 
 /* ── MODE TOGGLE ── */
 .mode-bar {
