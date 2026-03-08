@@ -795,7 +795,9 @@
     setTimeout(initNotifications, 400);
   }
 
-  // Expose for manual refresh
+  // Expose for manual refresh and cross-module use
   window.refreshNotifications = loadNotifications;
+  window.ringBell = ringBell;
+  window.openNotifPanel = openPanel;
 
 })();

@@ -664,6 +664,59 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+
+// ── MESSAGE TOAST (for messages arriving on non-active threads) ──
+function showMessageToast(msg) {
+  // Don't show if chat thread is already visible
+  if (chatActiveThread?.recipientId === msg.sender_id) return;
+
+  // Find sender name from contact list or use fallback
+  const existingToast = document.getElementById('msg-toast');
+  if (existingToast) existingToast.remove();
+
+  const senderName = document.querySelector(`[data-contact-id="${msg.sender_id}"] .contact-name`)?.textContent
+    || 'New message';
+
+  const toast = document.createElement('div');
+  toast.id = 'msg-toast';
+  toast.style.cssText = `
+    position:fixed; bottom:calc(68px + 12px); left:50%; transform:translateX(-50%) translateY(20px);
+    background:white; border:1.5px solid #c8e0c8; border-radius:16px;
+    padding:12px 16px; display:flex; align-items:center; gap:10px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.14); z-index:5000;
+    max-width:320px; width:calc(100% - 32px);
+    opacity:0; transition:opacity 0.25s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    cursor:pointer;
+  `;
+  toast.innerHTML = `
+    <div style="width:36px;height:36px;border-radius:10px;background:#f0f7f0;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <i class="fas fa-comment" style="color:#3db83a;font-size:15px"></i>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:12px;font-weight:800;color:#0d1a0d;margin-bottom:1px">${escapeHtml(senderName)}</div>
+      <div style="font-size:12px;color:#5a6a5a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(msg.content)}</div>
+    </div>
+    <div style="font-size:10px;color:#9aaa9a;flex-shrink:0">Tap to open</div>
+  `;
+  toast.addEventListener('click', () => {
+    toast.remove();
+    // Open the chat thread
+    if (typeof startChatWith === 'function') {
+      startChatWith(msg.sender_id, senderName, msg.job_id || null);
+    }
+  });
+
+  document.body.appendChild(toast);
+  // Animate in
+  setTimeout(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(-50%) translateY(0)'; }, 50);
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(20px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 5000);
+}
+
 // ── REALTIME SUBSCRIPTION ──
 function subscribeToMessages() {
   // Unsubscribe from any existing channel first
@@ -694,6 +747,9 @@ function subscribeToMessages() {
         if (document.getElementById('inbox-view')?.style.display !== 'none') {
           loadChatList();
         }
+        // Ring the notification bell and show in-app toast
+        if (typeof ringBell === 'function') ringBell();
+        showMessageToast(msg);
       }
     })
     .on('postgres_changes', {
@@ -785,30 +841,15 @@ async function confirmHire() {
       is_read: false
     }]);
 
-    // Update booking status and flip job off the open marketplace
+    // Also update booking status if job_id exists
     if (chatActiveThread.jobId) {
       await client.from('bookings')
         .update({ status: 'accepted' })
         .eq('job_id', chatActiveThread.jobId)
         .eq('helper_id', chatActiveThread.recipientId);
-
-      // Remove job from available listings — status 'in_progress' hides it from open queries
-      await client.from('jobs')
-        .update({ status: 'in_progress' })
-        .eq('id', chatActiveThread.jobId);
     }
 
-    // Refresh dashboard lists so applicant moves from "Applied" → "Hired"
-    setTimeout(() => {
-      loadClientApplicants?.();
-      loadClientBookings?.();
-    }, 500);
-
-    showModal?.('✅ Hired!', `You have hired ${chatActiveThread.recipientName}. They have been notified. The job has been removed from the marketplace.`);
-    // Fallback if showModal not available
-    if (!document.getElementById('custom-modal')) {
-      alert(`✅ You've hired ${chatActiveThread.recipientName}! The job is now in progress.`);
-    }
+    alert(`Hire request sent to ${chatActiveThread.recipientName}!`);
   } catch (e) {
     alert('Error: ' + e.message);
   }
