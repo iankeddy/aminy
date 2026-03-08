@@ -793,6 +793,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const db = supabase.createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
+window.db = db; // expose for notifications.js and nav-drawer.js
 
 // ── STATE ──
 let currentUser = null, currentProfile = null;
@@ -1236,7 +1237,7 @@ async function hireFromGig(helperId, helperName, gigId) {
   localStorage.setItem('openChat', 'true');
   localStorage.setItem('chatRecipientId', helperId);
   localStorage.setItem('chatRecipientName', helperName.trim());
-  localStorage.setItem('chatGigId', gigId.trim());
+  localStorage.setItem('chatJobId', gigId.trim());
   setTimeout(() => goToPage('dashboard.html'), 900);
 }
 
@@ -1245,10 +1246,11 @@ async function hireHelper(helperId, helperName) {
   if(currentProfile?.role === 'helper') { showToast('Helpers cannot hire other helpers','orange'); return; }
   closeModal('helper-modal');
   // Navigate to chat / dashboard with helper selected
-  localStorage.setItem('hireHelper', helperId);
-  localStorage.setItem('hireHelperName', helperName);
+  localStorage.setItem('openChat', 'true');
+  localStorage.setItem('chatRecipientId', helperId);
+  localStorage.setItem('chatRecipientName', helperName);
   showToast(`✅ Opening chat with ${helperName}…`,'green');
-  setTimeout(() => goToPage('dashboard.html'), 1200);
+  setTimeout(() => goToPage('dashboard.html'), 900);
 }
 
 // ── RENDER JOBS ──

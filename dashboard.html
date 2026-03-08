@@ -315,11 +315,7 @@
       loadMarketplaceJobs?.();
       loadChatList?.();
 
-      // Auto-open chat if redirected
-      if (localStorage.getItem("openChat") === "true") {
-        localStorage.removeItem("openChat");
-        setTimeout(openChatPage, 300);
-      }
+      // Auto-open chat handled by app.js DOMContentLoaded (reads chatRecipientId too)
 
     } catch (err) {
       console.warn("Dashboard init skipped:", err.message);
