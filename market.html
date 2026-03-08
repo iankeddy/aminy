@@ -1467,5 +1467,20 @@ function showToast(msg, type='') {
 <script src="notifications.js"></script>
 
 <script>document.addEventListener("DOMContentLoaded", () => initNav("market"));</script>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn" id="nav-home" onclick="goToPage('index.html')">
+      <i class="fas fa-home"></i><span>Home</span>
+    </button>
+    <button class="nav-btn active" id="nav-market" onclick="goToPage('market.html')">
+      <i class="fas fa-store"></i><span>Market</span>
+    </button>
+    <button class="nav-btn" id="nav-chat" onclick="goToPage('dashboard.html')">
+      <i class="fas fa-comment"></i><span>Chat</span>
+    </button>
+    <button class="nav-btn" id="nav-dashboard" onclick="goToPage('dashboard.html')">
+      <i class="fas fa-user"></i><span>Dashboard</span>
+    </button>
+  </nav>
 </body>
 </html>
