@@ -646,8 +646,12 @@ async function sendMessage() {
     tempDiv.remove();
     // Realtime will add the message via subscription
   } catch (e) {
+    console.error('sendMessage error:', e);
     tempDiv.querySelector('.msg').style.background = '#ef4444';
-    tempDiv.querySelector('div:last-child').textContent = 'Failed to send';
+    const errMsg = e?.message?.includes('row-level security')
+      ? 'Permission denied — check Supabase RLS policy'
+      : e?.message || 'Failed to send';
+    tempDiv.querySelector('div:last-child').textContent = errMsg;
   }
 }
 

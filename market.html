@@ -12,6 +12,7 @@
   <link rel="apple-touch-icon" href="images/icon-192.png">
 <title>Aminy Marketplace — Errands, Done Right.</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="nav-drawer.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -1220,7 +1221,7 @@ async function openGigModal(gigId) {
 
   document.getElementById('gig-modal-cta').innerHTML = `
     <button class="cta-btn cta-secondary" onclick="closeModal('gig-modal')"><i class="fas fa-times"></i></button>
-    <button class="cta-btn cta-primary" onclick="hireFromGig('${h.id}','${(h.full_name||'').replace(/'/g,"\'")}',' ${gigId}')">
+    <button class="cta-btn cta-primary" onclick="hireFromGig('${h.id}','${(h.full_name||'').replace(/'/g,"\'")}')">
       <i class="fas fa-handshake"></i> Hire ${(h.full_name||'').split(' ')[0]}
     </button>
   `;
@@ -1228,16 +1229,16 @@ async function openGigModal(gigId) {
   document.getElementById('gig-modal').classList.add('open');
 }
 
-async function hireFromGig(helperId, helperName, gigId) {
+async function hireFromGig(helperId, helperName) {
   if (!currentUser) { showToast('Please log in to hire helpers', 'orange'); closeModal('gig-modal'); goToPage('auth.html'); return; }
   if (currentProfile?.role === 'helper') { showToast('Helpers cannot hire other helpers', 'orange'); return; }
   closeModal('gig-modal');
   showToast(`Opening chat with ${helperName.trim()}…`, 'green');
-  // Pass gig context via localStorage and redirect to dashboard chat
+  // Pass recipient to dashboard chat (no job/gig ID needed for initial contact)
   localStorage.setItem('openChat', 'true');
   localStorage.setItem('chatRecipientId', helperId);
   localStorage.setItem('chatRecipientName', helperName.trim());
-  localStorage.setItem('chatJobId', gigId.trim());
+  localStorage.removeItem('chatJobId'); // clear any stale job id
   setTimeout(() => goToPage('dashboard.html'), 900);
 }
 
@@ -1443,7 +1444,7 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 // ── NAVIGATION ──
 function goToPage(page) { window.location.href = page; }
 function openMenu_old() {  }
-function closeMenu(e) { if(e.target === document.getElementById('app-menu')) document.getElementById('app-menu').classList.remove('open'); }
+// closeMenu handled by nav-drawer.js
 function handleProfileClick() { currentUser ? goToPage('dashboard.html') : goToPage('auth.html'); }
 async function doLogout() { await db.auth.signOut(); goToPage('index.html'); }
 async function openChatFromNav() {
@@ -1464,7 +1465,6 @@ function showToast(msg, type='') {
   toastTimer = setTimeout(() => { wrap.style.display='none'; }, 3000);
 }
 </script>
-<script src="nav-drawer.js"></script>
 <script src="reviews-addon.js"></script>
 <script src="notifications.js"></script>
 
