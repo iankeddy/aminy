@@ -22,6 +22,21 @@
 
 <!-- DRAWER -->
 <div id="app-menu" class="app-menu hidden"></div>
+      <div>
+        <div class="menu-brand-name">Aminy</div>
+        <div class="menu-brand-sub">Local Services</div>
+      </div>
+    </div>
+    <div class="menu-nav">
+      <button class="menu-item" onclick="goToPage('index.html')"><i class="fas fa-home"></i> Home</button>
+      <button class="menu-item" onclick="goToPage('market.html')"><i class="fas fa-store"></i> Marketplace</button>
+      <button class="menu-item active"><i class="fas fa-th-large"></i> Dashboard</button>
+    </div>
+    <div class="menu-footer">
+      <button class="menu-item danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </div>
+</div>
 
 <!-- APP HEADER -->
 <header class="app-header">
@@ -67,16 +82,30 @@
       
       <select id="job-category">
   <option value="">Select Category</option>
-  <option value="cleaning">Cleaning</option>
-  <option value="delivery">Delivery</option>
-  <option value="repairs">Repairs</option>
-  <option value="shopping">Shopping</option>
-  <option value="transport">Transport</option>
+  <option value="cleaning">🧹 Cleaning</option>
+  <option value="delivery">🚚 Delivery</option>
+  <option value="repairs">🔧 Repairs</option>
+  <option value="shopping">🛒 Shopping</option>
+  <option value="transport">🚗 Transport</option>
+  <option value="petcare">🐾 Pet Care</option>
+  <option value="gardening">🌿 Gardening</option>
+  <option value="laundry">👕 Laundry</option>
+  <option value="moving">📦 Moving</option>
+  <option value="tutoring">📚 Tutoring</option>
+  <option value="events">🎉 Events</option>
+  <option value="security">🔒 Security</option>
 </select>
 
       <button onclick="handlePostJob()" class="btn-primary full">
         Post Job
       </button>
+    </div>
+
+    <!-- Who Applied — applicants waiting for client to chat & hire -->
+    <div class="card" style="border-top:3px solid #3db83a">
+      <h3><i class="fas fa-bell"></i> Job Applications</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin:-4px 0 12px">Helpers who applied for your jobs — chat with them before hiring.</p>
+      <div id="client-applicants-list">Loading...</div>
     </div>
 
     <!-- My Helpers -->
@@ -89,6 +118,19 @@
 
   <!-- HELPER SECTION -->
   <section id="helper-section" style="display:none;">
+
+    <!-- My Gigs -->
+    <div class="card" id="my-gigs-card" style="display:none">
+      <h3><i class="fas fa-store" style="color:#3db83a"></i> My Gigs
+        <span style="margin-left:auto;font-size:11px;font-weight:600;color:#8a9a8a;cursor:pointer" onclick="openGigSheet()">
+          + New Gig
+        </span>
+      </h3>
+      <p style="font-size:12px;color:#8a9a8a;margin:-4px 0 12px;line-height:1.5">
+        Your gigs appear on the Marketplace. Create one gig per service you offer.
+      </p>
+      <div id="my-gigs-grid"></div>
+    </div>
 
     <!-- Requests -->
     <div class="card highlight">
@@ -180,6 +222,8 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
+<script src="reviews-addon.js"></script>
+<script src="gig-manager.js"></script>
 
 <!-- KEEP YOUR EXISTING AUTH + ROLE SCRIPT EXACTLY AS IS -->
 <script>
@@ -246,14 +290,14 @@
             const vettingForm = document.getElementById("vetting-form");
             if (vettingForm) {
               vettingForm.style.padding = '0';
-              vettingForm.innerHTML = \`
+              vettingForm.innerHTML = `
                 <div style="text-align:center;padding:32px 20px">
                   <div style="width:60px;height:60px;border-radius:50%;background:#fff8ec;color:#f07623;font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
                     <i class="fas fa-clock"></i>
                   </div>
                   <div style="font-family:var(--font-display);font-weight:800;font-size:18px;margin-bottom:6px">Under Review</div>
                   <div style="font-size:13px;color:var(--text-muted);line-height:1.6">Your documents have been submitted and are being reviewed by our team. You'll be notified within 24 hours.</div>
-                </div>\`;
+                </div>`;
             }
           } else {
             // Documents not yet submitted — launch wizard
@@ -262,7 +306,19 @@
         }
       }
 
-      // Optional safe loads
+      // Load role-specific dashboard data
+      if (profile.role === 'client') {
+        loadClientApplicants?.();
+        loadClientBookings?.();
+      }
+      if (profile.role === 'helper' && profile.is_vetted === true) {
+        // Show and load gigs section
+        const gigsCard = document.getElementById('my-gigs-card');
+        if (gigsCard) gigsCard.style.display = 'block';
+        loadMyGigs?.();
+        loadHelperRequests?.();
+        loadHelperActiveJobs?.();
+      }
       loadMarketplaceJobs?.();
       loadChatList?.();
 
