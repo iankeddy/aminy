@@ -846,6 +846,7 @@ button {
 @media (min-width: 480px) {
   .service-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
 @media (min-width: 640px) {
   .service-grid { grid-template-columns: repeat(6, 1fr); }
   .section { padding: 0 20px; }
@@ -853,9 +854,82 @@ button {
   .category-scroll { padding: 12px 20px; }
   .job-list { padding: 12px 20px; }
   .dashboard-content { padding: 0 20px; }
+  .job-cards { gap: 14px; }
 }
-@media (min-width: 960px) {
-  body { max-width: 480px; margin: 0 auto; }
-  .app-header, .bottom-nav, .category-scroll, .search-box { max-width: 480px; }
-  .chat-page { max-width: 480px; margin: 0 auto; }
+
+/* ── TABLET (640–1023px) ── */
+@media (min-width: 640px) and (max-width: 1023px) {
+  body { max-width: 100%; margin: 0; }
+  .app-header { max-width: 100%; }
+  .dashboard-content { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  .section { max-width: 720px; margin-left: auto; margin-right: auto; }
+}
+
+/* ── DESKTOP (≥1024px) — sidebar layout handled by nav-drawer.js ── */
+@media (min-width: 1024px) {
+  /* Body already padded left by nav-drawer.js sidebar styles */
+  body { max-width: 100% !important; margin: 0; }
+
+  /* Header stays sticky across content area */
+  .app-header {
+    max-width: 100%;
+  }
+
+  /* Content areas centered and width-capped */
+  .dashboard-content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+  .section {
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 32px;
+  }
+  .search-box {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 14px 32px;
+  }
+  .category-scroll {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 12px 32px;
+  }
+
+  /* Service grid wider on desktop */
+  .service-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+  }
+
+  /* Job cards in a 2-column grid on desktop */
+  .job-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .job-card { min-width: 0; }
+  .trending-job-card { margin-bottom: 0; }
+
+  /* Wider cards in dashboard */
+  .card { border-radius: 20px; }
+
+  /* Chat occupies content column */
+  .chat-page {
+    left: 240px;
+    width: calc(100% - 240px);
+  }
+
+  /* Bottom nav hidden by nav-drawer.js but ensure it here too */
+  .bottom-nav { display: none !important; }
+}
+
+@media (min-width: 1280px) {
+  .chat-page { left: 260px; width: calc(100% - 260px); }
+  .dashboard-content,
+  .section,
+  .search-box,
+  .category-scroll { max-width: 980px; }
 }

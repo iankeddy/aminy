@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aminy Marketplace — Errands, Done Right.</title>
+<script src="nav-drawer.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -68,8 +69,8 @@ body {
 .icon-btn:hover { background: var(--surface); }
 
 /* ── DRAWER ── */
-.app-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 2000; display: none; backdrop-filter: blur(4px); }
-.app-menu.open { display: block; }
+.app-menu { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 2000; backdrop-filter: blur(4px); }
+.app-menu.hidden { display: none !important; }
 .menu-content {
   width: 270px; height: 100%; background: white;
   padding: 28px 20px; display: flex; flex-direction: column; gap: 6px;
@@ -532,6 +533,11 @@ body {
   .main-content { padding: 20px; }
 }
 @media (min-width: 960px) {
+  .helpers-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .main-content { max-width: 860px; margin: 0 auto; padding: 20px 32px; }
+  .search-area, .cat-scroll { max-width: 860px; margin: 0 auto; }
   .helpers-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 }
 
@@ -646,29 +652,11 @@ body {
 <body>
 
 <!-- DRAWER -->
-<div class="app-menu" id="app-menu" onclick="closeMenu(event)">
-  <div class="menu-content" onclick="event.stopPropagation()">
-    <div class="menu-brand">
-      <div class="menu-brand-icon">A</div>
-      <div>
-        <div class="menu-brand-name">Aminy</div>
-        <div class="menu-brand-sub">Local Services</div>
-      </div>
-    </div>
-    <div class="menu-nav">
-      <button class="menu-item" onclick="goToPage('index.html')"><i class="fas fa-home"></i> Home</button>
-      <button class="menu-item active"><i class="fas fa-store"></i> Marketplace</button>
-      <button class="menu-item" onclick="goToPage('dashboard.html')"><i class="fas fa-th-large"></i> Dashboard</button>
-    </div>
-    <div class="menu-footer">
-      <button class="menu-item danger" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-    </div>
-  </div>
-</div>
+<div id="app-menu" class="app-menu" style="display:none"></div>
 
 <!-- HEADER -->
 <header class="app-header">
-  <button class="icon-btn" onclick="openMenu()" aria-label="Menu"><i class="fas fa-bars"></i></button>
+  <button class="icon-btn" onclick="toggleAppMenu()" aria-label="Menu"><i class="fas fa-bars"></i></button>
   <div class="app-logo" onclick="goToPage('index.html')" role="img" aria-label="Aminy Home">
     <img src="images/aminy-logo.png" alt="Aminy"
       onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
@@ -1446,7 +1434,7 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 
 // ── NAVIGATION ──
 function goToPage(page) { window.location.href = page; }
-function openMenu() { document.getElementById('app-menu').classList.add('open'); }
+function openMenu_old() {  }
 function closeMenu(e) { if(e.target === document.getElementById('app-menu')) document.getElementById('app-menu').classList.remove('open'); }
 function handleProfileClick() { currentUser ? goToPage('dashboard.html') : goToPage('auth.html'); }
 async function doLogout() { await db.auth.signOut(); goToPage('index.html'); }
@@ -1469,5 +1457,7 @@ function showToast(msg, type='') {
 }
 </script>
 <script src="reviews-addon.js"></script>
+
+<script>document.addEventListener("DOMContentLoaded", () => initNav("market"));</script>
 </body>
 </html>

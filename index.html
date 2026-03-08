@@ -5,37 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Aminy — Trusted Local Services</title>
   <link rel="stylesheet" href="style.css">
+  <script src="nav-drawer.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
 <!-- DRAWER -->
-<div id="app-menu" class="app-menu hidden" onclick="toggleAppMenu()">
-  <div class="menu-content" onclick="event.stopPropagation()">
-    <div class="menu-brand">
-      <div class="menu-brand-icon">A</div>
-      <div>
-        <div class="menu-brand-name">Aminy</div>
-        <div class="menu-brand-sub">Local Services</div>
-      </div>
-    </div>
-    <div class="menu-nav">
-      <button class="menu-item active" onclick="goToPage('index.html')"><i class="fas fa-home"></i> Home</button>
-      <button class="menu-item" onclick="goToPage('market.html')"><i class="fas fa-store"></i> Marketplace</button>
-      <button class="menu-item" onclick="goToPage('dashboard.html')"><i class="fas fa-th-large"></i> Dashboard</button>
-    </div>
-    <div class="menu-footer">
-      <div class="menu-user" id="menu-user-info" onclick="handleProfileClick()">
-        <div class="menu-user-avatar" id="menu-avatar">?</div>
-        <div>
-          <div class="menu-user-name" id="menu-name">My Account</div>
-          <div class="menu-user-role" id="menu-role">Tap to sign in</div>
-        </div>
-      </div>
-      <button class="menu-item danger" onclick="logout()" style="margin-top:6px"><i class="fas fa-sign-out-alt"></i> Logout</button>
-    </div>
-  </div>
-</div>
+<div id="app-menu" class="app-menu hidden"></div>
 
 <!-- HEADER -->
 <header class="app-header">
@@ -132,5 +108,7 @@
     } catch(e) {}
   };
 </script>
+
+<script>document.addEventListener("DOMContentLoaded", () => initNav("home"));</script>
 </body>
 </html>
