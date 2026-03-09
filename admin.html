@@ -1590,18 +1590,40 @@ async function bootDashboard() {
 }
 
 // ── SESSION CHECK ─────────────────────────────────────────────
+// Hide the page immediately so nothing renders during the auth check.
+// Revealed only after admin role is confirmed — fail-safe by default.
+document.body.style.visibility = 'hidden';
+
 window.addEventListener('load', async () => {
-  const { data: { session } } = await db.auth.getSession();
-  if(session) {
-    const { data: profile } = await db.from('profiles').select('role,full_name').eq('id',session.user.id).maybeSingle();
-    if(profile && profile.role==='admin') {
-      // Fetch admin_role separately — graceful if column doesn't exist yet
-      let adminRole2 = null;
-      try { const { data: rd2 } = await db.from('profiles').select('admin_role').eq('id',session.user.id).maybeSingle(); adminRole2 = rd2?.admin_role || null; } catch(e) {}
-      currentUser = { ...session.user, ...profile, admin_role: adminRole2 };
-      bootDashboard();
+  try {
+    const { data: { session } } = await db.auth.getSession();
+
+    // Not logged in — redirect to login, remove admin URL from history
+    if (!session) {
+      window.location.replace('index.html');
       return;
     }
+
+    const { data: profile, error } = await db
+      .from('profiles')
+      .select('role, full_name, admin_role')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
+    // Profile missing, query error, or not an admin — reject and redirect
+    if (error || !profile || profile.role !== 'admin') {
+      window.location.replace('index.html');
+      return;
+    }
+
+    // Admin confirmed — reveal page and boot dashboard
+    currentUser = { ...session.user, ...profile };
+    document.body.style.visibility = 'visible';
+    bootDashboard();
+
+  } catch (err) {
+    // Any unexpected failure (network, Supabase unreachable) — fail safe
+    window.location.replace('index.html');
   }
 });
 
@@ -1724,27 +1746,41 @@ async function loadVettingQueue() {
       container.innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><h4>All caught up!</h4><p>No helpers pending review right now.</p></div>`;
       return;
     }
-    container.innerHTML = helpers.map(h=>`
+    // Generate signed URLs for each helper's private documents (7-day expiry)
+    async function signedUrl(path) {
+      if (!path) return null;
+      const { data, error } = await db.storage.from('verification-docs').createSignedUrl(path, 60 * 60 * 24 * 7);
+      return error ? null : data.signedUrl;
+    }
+    const cards = await Promise.all(helpers.map(async h => {
+      const selfieUrl  = await signedUrl(h.selfie_url);
+      const idUrl      = await signedUrl(h.id_url);
+      const conductUrl = await signedUrl(h.cert_good_conduct_url);
+      function esc(v) { return (v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      const nameForBtn = (h.full_name||'').replace(/'/g,"\\'");
+      return `
       <div class="vq-card" id="vcard-${h.id}">
         <div class="vq-docs">
-          ${h.selfie_url?`<a href="${h.selfie_url}" target="_blank"><img src="${h.selfie_url}" class="doc-thumb" title="Selfie" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">🤳</div>`}
-          ${h.id_url?`<a href="${h.id_url}" target="_blank"><img src="${h.id_url}" class="doc-thumb" title="National ID" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">🪪</div>`}
-          ${h.cert_good_conduct_url?`<a href="${h.cert_good_conduct_url}" target="_blank"><img src="${h.cert_good_conduct_url}" class="doc-thumb" title="Police Clearance" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">📋</div>`}
+          ${selfieUrl?`<a href="${selfieUrl}" target="_blank"><img src="${selfieUrl}" class="doc-thumb" title="Selfie" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">🤳</div>`}
+          ${idUrl?`<a href="${idUrl}" target="_blank"><img src="${idUrl}" class="doc-thumb" title="National ID" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">🪪</div>`}
+          ${conductUrl?`<a href="${conductUrl}" target="_blank"><img src="${conductUrl}" class="doc-thumb" title="Police Clearance" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">📋</div>`}
         </div>
         <div class="vq-info">
-          <div class="vq-name">${h.full_name||'Unknown Helper'}</div>
+          <div class="vq-name">${esc(h.full_name)||'Unknown Helper'}</div>
           <div class="vq-meta">
             ${statusBadge(h.is_vetted)}
-            <span><i class="fas fa-map-marker-alt" style="color:var(--orange)"></i> ${h.location_name||'Location unknown'}</span>
-            <span><i class="fas fa-envelope" style="color:var(--grey-400)"></i> ${h.email||''}</span>
+            <span><i class="fas fa-map-marker-alt" style="color:var(--orange)"></i> ${esc(h.location_name)||'Location unknown'}</span>
+            <span><i class="fas fa-envelope" style="color:var(--grey-400)"></i> ${esc(h.email)}</span>
           </div>
           <input type="text" id="feedback-${h.id}" class="vq-feedback" placeholder="Rejection reason (required if rejecting)…">
           <div class="vq-actions">
-            <button class="btn-approve" onclick="approveHelper('${h.id}','${(h.full_name||'').replace(/'/g,"\\'")}')"><i class="fas fa-check"></i> Approve</button>
-            <button class="btn-reject" onclick="rejectHelper('${h.id}','${(h.full_name||'').replace(/'/g,"\\'")}')"><i class="fas fa-times"></i> Reject</button>
+            <button class="btn-approve" onclick="approveHelper('${h.id}','${nameForBtn}')"><i class="fas fa-check"></i> Approve</button>
+            <button class="btn-reject" onclick="rejectHelper('${h.id}','${nameForBtn}')"><i class="fas fa-times"></i> Reject</button>
           </div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }));
+    container.innerHTML = cards.join('');
   } catch(e) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>Error: ${e.message}</div>`;
   }

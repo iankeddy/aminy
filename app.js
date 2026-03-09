@@ -96,8 +96,11 @@ async function handleVettingUpload() {
             const filePath = `${user.id}/${item.name}.${fileExt}`;
             const { error: upErr } = await client.storage.from('verification-docs').upload(filePath, item.file, { upsert: true });
             if (upErr) throw upErr;
-            const { data: urlData } = client.storage.from('verification-docs').getPublicUrl(filePath);
-            updateData[item.col] = urlData.publicUrl;
+            const { data: signedData, error: signErr } = await client.storage
+            .from('verification-docs')
+            .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7-day signed URL
+          if (signErr) throw signErr;
+          updateData[item.col] = filePath; // store the storage PATH, not the public URL
         }
 
         const { error: upErr } = await client.from('profiles').update(updateData).eq('id', user.id);
@@ -133,13 +136,13 @@ async function loadPendingHelpers() {
         container.innerHTML += `
     <div class="vetting-card" id="card-${helper.id}">
         <div class="doc-viewer">
-            <a href="${helper.selfie_url}" target="_blank"><img src="${helper.selfie_url}" class="doc-thumb" title="Selfie"></a>
-            <a href="${helper.id_url}" target="_blank"><img src="${helper.id_url}" class="doc-thumb" title="ID Card"></a>
-            <a href="${helper.cert_good_conduct_url}" target="_blank"><img src="${helper.cert_good_conduct_url}" class="doc-thumb" title="Conduct Cert"></a>
+            <a href="${escapeHtml(helper.selfie_url || '')}" target="_blank"><img src="${escapeHtml(helper.selfie_url || '')}" class="doc-thumb" title="Selfie"></a>
+            <a href="${escapeHtml(helper.id_url || '')}" target="_blank"><img src="${escapeHtml(helper.id_url || '')}" class="doc-thumb" title="ID Card"></a>
+            <a href="${escapeHtml(helper.cert_good_conduct_url || '')}" target="_blank"><img src="${escapeHtml(helper.cert_good_conduct_url || '')}" class="doc-thumb" title="Conduct Cert"></a>
         </div>
         <div class="vetting-actions">
-            <h2>${helper.full_name || 'Anonymous'}</h2>
-            <p>${helper.email}<br>Location: ${helper.location_name || 'Unknown'}</p>
+            <h2>${escapeHtml(helper.full_name || 'Anonymous')}</h2>
+            <p>${escapeHtml(helper.email || '')}<br>Location: ${escapeHtml(helper.location_name || 'Unknown')}</p>
             <input type="text" id="feedback-${helper.id}" class="feedback-input" placeholder="Rejection reason...">
             <div class="action-btns">
                 <button onclick="updateVettingStatus('${helper.id}', true)" class="btn-approve">Approve</button>
@@ -259,11 +262,11 @@ function renderJobResults(jobs) {
   const container = document.getElementById("search-results");
   container.innerHTML = jobs.map(job => `
     <div class="search-card" onclick="openJobFromSearch('${job.id}')">
-      <h4>${job.title}</h4>
-      <p>${job.description?.slice(0, 80) || ""}</p>
+      <h4>${escapeHtml(job.title)}</h4>
+      <p>${escapeHtml(job.description?.slice(0, 80) || "")}</p>
       <div class="job-meta">
-        <span>${job.location || "Location not set"}</span>
-        <span class="budget">${job.budget || "Budget not set"}</span>
+        <span>${escapeHtml(job.location || "Location not set")}</span>
+        <span class="budget">${escapeHtml(job.budget || "Budget not set")}</span>
       </div>
     </div>
   `).join("");
@@ -281,9 +284,9 @@ async function loadTrendingJobs() {
     container.innerHTML = data.length
       ? data.map(job => `
         <div class="trending-job-card" onclick="openJobFromSearch('${job.id}')">
-          <h4>${job.title}</h4>
-          <p>${job.description?.slice(0, 60) || ""}</p>
-          <span class="budget">${job.budget || "Budget not set"}</span>
+          <h4>${escapeHtml(job.title)}</h4>
+          <p>${escapeHtml(job.description?.slice(0, 60) || "")}</p>
+          <span class="budget">${escapeHtml(job.budget || "Budget not set")}</span>
         </div>`).join("")
       : "<p class='muted'>No jobs available</p>";
   } catch { container.innerHTML = "<p class='muted'>Jobs unavailable</p>"; }
@@ -328,10 +331,10 @@ function renderMarketplaceJobs(jobs) {
   if (!jobs.length) { container.innerHTML = "<p class='muted'>No jobs found</p>"; return; }
   container.innerHTML = jobs.map(job => `
     <div class="job-card" onclick="openJobFromSearch('${job.id}')">
-      <div class="job-title">${job.title || "Untitled Job"}</div>
-      <p>${job.description ? job.description.slice(0, 80) + "..." : ""}</p>
+      <div class="job-title">${escapeHtml(job.title || "Untitled Job")}</div>
+      <p>${escapeHtml(job.description ? job.description.slice(0, 80) + "..." : "")}</p>
       <div class="job-footer">
-        <span class="budget">${job.budget || "Budget not set"}</span>
+        <span class="budget">${escapeHtml(job.budget || "Budget not set")}</span>
       </div>
     </div>`).join("");
 }
@@ -1579,8 +1582,8 @@ async function wizSubmit() {
       const { error: upErr } = await client.storage
         .from('verification-docs').upload(path, item.file, { upsert: true });
       if (upErr) throw upErr;
-      const { data: urlData } = client.storage.from('verification-docs').getPublicUrl(path);
-      updateData[item.col] = urlData.publicUrl;
+      // Store the storage path only — never store a public URL for private identity documents
+      updateData[item.col] = path;
     }
 
     const { error } = await client.from('profiles').update(updateData).eq('id', user.id);

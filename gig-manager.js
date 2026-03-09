@@ -400,18 +400,22 @@ function gigMiniCardHTML(g) {
     ? (g.price_type === 'hourly' ? `KES ${g.price}/hr` : `KES ${g.price}`)
     : 'Negotiable';
 
+  const safeTitle = (g.title || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const safeCat   = (g.category || 'General').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const safeCover = (g.cover_image_url || '').replace(/"/g,'&quot;');
+
   return `
     <div class="gig-mini-card" onclick="openGigSheet('${g.id}')">
       <div class="gig-mini-cover" style="background:linear-gradient(135deg,${color},${color}99)">
         ${g.cover_image_url
-          ? `<img src="${g.cover_image_url}" alt="${g.title}" onerror="this.style.display='none'">`
+          ? `<img src="${safeCover}" alt="${safeTitle}" onerror="this.style.display='none'">`
           : `<i class="fas ${icon} gig-mini-cover-icon"></i>`}
         <div class="gig-active-dot ${g.is_active ? 'on' : 'off'}" title="${g.is_active ? 'Active' : 'Paused'}"></div>
       </div>
       <div class="gig-mini-body">
-        <div class="gig-mini-title">${g.title}</div>
+        <div class="gig-mini-title">${safeTitle}</div>
         <div class="gig-mini-price">${price}</div>
-        <div class="gig-mini-cat">${g.category || 'General'}</div>
+        <div class="gig-mini-cat">${safeCat}</div>
       </div>
     </div>`;
 }
@@ -463,6 +467,16 @@ function renderGigForm(gig) {
   const body   = document.getElementById('gig-sheet-body');
   const footer = document.getElementById('gig-sheet-footer');
 
+  // Sanitize all user-sourced values before interpolation
+  function esc(v) {
+    return (v || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  const safeTitle    = esc(gig?.title);
+  const safeDesc     = esc(gig?.description);
+  const safeCoverUrl = esc(gig?.cover_image_url);
+  const safeCategory = esc(gig?.category);
+
   // Category picker
   const catPicker = GIG_CATEGORIES.map(c => `
     <div class="gig-cat-opt ${gig?.category === c.value ? 'selected' : ''}"
@@ -488,9 +502,9 @@ function renderGigForm(gig) {
     <div class="gig-field">
       <label class="gig-label"><i class="fas fa-image" style="margin-right:4px"></i> Cover Photo (optional)</label>
       <div class="cover-upload-area" id="cover-preview" onclick="document.getElementById('cover-file-input').click()">
-        ${gig?.cover_image_url ? `<img src="${gig.cover_image_url}" alt="cover">` : ''}
-        <i class="fas fa-cloud-upload-alt" ${gig?.cover_image_url ? 'style="display:none"' : ''}></i>
-        <span ${gig?.cover_image_url ? 'style="display:none"' : ''}>Tap to upload</span>
+        ${safeCoverUrl ? `<img src="${safeCoverUrl}" alt="cover">` : ''}
+        <i class="fas fa-cloud-upload-alt" ${safeCoverUrl ? 'style="display:none"' : ''}></i>
+        <span ${safeCoverUrl ? 'style="display:none"' : ''}>Tap to upload</span>
         <input type="file" id="cover-file-input" accept="image/*" onchange="previewCover(event)" style="opacity:0;position:absolute;inset:0;cursor:pointer">
       </div>
     </div>
@@ -500,7 +514,7 @@ function renderGigForm(gig) {
       <label class="gig-label"><i class="fas fa-pen" style="margin-right:4px"></i> Gig Title *</label>
       <input class="gig-input" id="gig-title-input" type="text"
         placeholder="e.g. Deep House Cleaning – Kitchen & Bathrooms"
-        maxlength="80" value="${gig?.title || ''}">
+        maxlength="80" value="${safeTitle}">
     </div>
 
     <!-- Description -->
@@ -508,13 +522,13 @@ function renderGigForm(gig) {
       <label class="gig-label"><i class="fas fa-align-left" style="margin-right:4px"></i> Description *</label>
       <textarea class="gig-textarea" id="gig-desc-input"
         placeholder="Describe exactly what you'll do, your experience, and what makes you the right hire…"
-        maxlength="400">${gig?.description || ''}</textarea>
+        maxlength="400">${safeDesc}</textarea>
     </div>
 
     <!-- Category -->
     <div class="gig-field">
       <label class="gig-label"><i class="fas fa-tag" style="margin-right:4px"></i> Category *</label>
-      <input type="hidden" id="gig-cat-input" value="${gig?.category || ''}">
+      <input type="hidden" id="gig-cat-input" value="${safeCategory}">
       <div class="gig-cat-grid">${catPicker}</div>
     </div>
 
