@@ -911,8 +911,9 @@ async function doLogin() {
       throw new Error('Access denied. Admin accounts only.');
     }
     // Fetch admin_role separately — gracefully handles case where column doesn't exist yet
-    const { data: roleData } = await db.from('profiles').select('admin_role').eq('id',data.user.id).maybeSingle().catch(()=>({data:null}));
-    currentUser = { ...data.user, ...profile, admin_role: roleData?.admin_role || null };
+    let adminRole = null;
+    try { const { data: rd } = await db.from('profiles').select('admin_role').eq('id',data.user.id).maybeSingle(); adminRole = rd?.admin_role || null; } catch(e) {}
+    currentUser = { ...data.user, ...profile, admin_role: adminRole };
     await logAction('login', 'auth', currentUser.id, { email: currentUser.email });
     bootDashboard();
   } catch(e) {
@@ -976,8 +977,9 @@ window.addEventListener('load', async () => {
     const { data: profile } = await db.from('profiles').select('role,full_name').eq('id',session.user.id).maybeSingle();
     if(profile && profile.role==='admin') {
       // Fetch admin_role separately — graceful if column doesn't exist yet
-      const { data: roleData } = await db.from('profiles').select('admin_role').eq('id',session.user.id).maybeSingle().catch(()=>({data:null}));
-      currentUser = { ...session.user, ...profile, admin_role: roleData?.admin_role || null };
+      let adminRole2 = null;
+      try { const { data: rd2 } = await db.from('profiles').select('admin_role').eq('id',session.user.id).maybeSingle(); adminRole2 = rd2?.admin_role || null; } catch(e) {}
+      currentUser = { ...session.user, ...profile, admin_role: adminRole2 };
       bootDashboard();
       return;
     }
