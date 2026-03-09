@@ -340,10 +340,12 @@ function renderMarketplaceJobs(jobs) {
 }
 
 async function handlePostJob() {
-  const title = document.getElementById('job-title')?.value.trim();
+  const title       = document.getElementById('job-title')?.value.trim();
   const description = document.getElementById('job-desc')?.value.trim();
-  const budget = document.getElementById('job-budget')?.value.trim();
-  const category = document.getElementById('job-category')?.value;
+  const budget      = document.getElementById('job-budget')?.value.trim();
+  const category    = document.getElementById('job-category')?.value;
+  // B-01 fix: capture location so search filtering works correctly
+  const location    = document.getElementById('job-location')?.value.trim() || '';
 
   if (!title || !description || !budget || !category) {
     alert("Please fill in all fields including category.");
@@ -352,13 +354,18 @@ async function handlePostJob() {
   toggleLoader(true);
   try {
     const { data: { user } } = await client.auth.getUser();
-    const { error } = await client.from("jobs").insert([{ title, description, budget, category, client_id: user.id, status: "open" }]);
+    const { error } = await client.from("jobs").insert([{
+      title, description, budget, category, location,
+      client_id: user.id, status: "open"
+    }]);
     if (error) throw error;
     alert("Job posted successfully!");
-    document.getElementById('job-title').value = "";
-    document.getElementById('job-desc').value = "";
-    document.getElementById('job-budget').value = "";
+    document.getElementById('job-title').value    = "";
+    document.getElementById('job-desc').value     = "";
+    document.getElementById('job-budget').value   = "";
     document.getElementById('job-category').value = "";
+    const locEl = document.getElementById('job-location');
+    if (locEl) locEl.value = "";
     loadMarketplaceJobs?.();
   } catch (err) { alert(err.message); }
   finally { toggleLoader(false); }
@@ -389,6 +396,7 @@ let chatCurrentUser = null;
 let chatCurrentProfile = null;
 let chatActiveThread = null;   // { recipientId, recipientName, recipientAvatar, jobId }
 let chatRealtimeChannel = null;
+let chatSendChannel = null;  // B-03 fix: track the send channel so it can be removed on close
 let chatUnreadCount = 0;
 
 // ── BOOT CHAT ──
@@ -417,10 +425,14 @@ function openChatPage() {
 function exitChat() {
   document.getElementById('chat-page')?.classList.add('hidden');
   chatActiveThread = null;
-  // Unsubscribe from realtime when chat closes
+  // B-03 fix: remove both tracked channels on close to prevent event accumulation
   if (chatRealtimeChannel) {
     client.removeChannel(chatRealtimeChannel);
     chatRealtimeChannel = null;
+  }
+  if (chatSendChannel) {
+    client.removeChannel(chatSendChannel);
+    chatSendChannel = null;
   }
 }
 
@@ -775,7 +787,11 @@ function subscribeToMessages() {
     .subscribe();
 
   // Also subscribe to messages we send (for multi-device sync)
-  const sendChannel = client
+  // B-03 fix: assign to module-level variable so exitChat() can remove it
+  if (chatSendChannel) {
+    client.removeChannel(chatSendChannel);
+  }
+  chatSendChannel = client
     .channel('messages-sent-' + chatCurrentUser.id)
     .on('postgres_changes', {
       event: 'INSERT',
@@ -870,7 +886,9 @@ function showInbox() {
   if (threadView) threadView.classList.add('hidden');
   document.getElementById('chat-with-name').innerText = 'Inbox';
   chatActiveThread = null;
+  // B-03 fix: remove both channels when leaving a thread
   if (chatRealtimeChannel) { client.removeChannel(chatRealtimeChannel); chatRealtimeChannel = null; }
+  if (chatSendChannel)     { client.removeChannel(chatSendChannel);     chatSendChannel = null; }
 }
 
 // ── LEGACY showChatThread (kept for backward compatibility) ──
@@ -1018,18 +1036,37 @@ let wizState = {
   serviceCategory: '',
   hourlyRate: '',
   locationName: '',
+  // File objects — never persisted (cannot be serialized)
   selfieFile: null,
   idFile: null,
   conductFile: null,
-  selfiePreview: null,
-  idPreview: null,
-  conductPreview: null,
+  // B-02 fix: store only filename flags, NOT base64 previews
+  // Base64 images (up to 15MB total) reliably overflow the 5MB localStorage quota
+  selfieFileName: null,
+  idFileName: null,
+  conductFileName: null,
+  selfieHasFile: false,
+  idHasFile: false,
+  conductHasFile: false,
 };
 
 function wizSave() {
   try {
-    const s = { ...wizState };
-    delete s.selfieFile; delete s.idFile; delete s.conductFile; // can't serialize File objects
+    // B-02 fix: only persist lightweight metadata — never base64 previews or File objects
+    const s = {
+      step:             wizState.step,
+      fullName:         wizState.fullName,
+      bio:              wizState.bio,
+      serviceCategory:  wizState.serviceCategory,
+      hourlyRate:       wizState.hourlyRate,
+      locationName:     wizState.locationName,
+      selfieFileName:   wizState.selfieFileName,
+      idFileName:       wizState.idFileName,
+      conductFileName:  wizState.conductFileName,
+      selfieHasFile:    wizState.selfieHasFile,
+      idHasFile:        wizState.idHasFile,
+      conductHasFile:   wizState.conductHasFile,
+    };
     localStorage.setItem(WIZ_KEY, JSON.stringify(s));
   } catch(e) {}
 }
@@ -1229,7 +1266,7 @@ function stepDocuments() {
         required: true,
         icon: 'fa-camera',
         hint: 'A clear photo of your face. No sunglasses or hats.',
-        preview: wizState.selfiePreview,
+        hasFile: wizState.selfieHasFile,
         fileName: wizState.selfieFileName,
       })}
       ${docUploadField({
@@ -1238,7 +1275,7 @@ function stepDocuments() {
         required: true,
         icon: 'fa-id-card',
         hint: 'Front of your Kenya National ID or passport photo page.',
-        preview: wizState.idPreview,
+        hasFile: wizState.idHasFile,
         fileName: wizState.idFileName,
       })}
       ${docUploadField({
@@ -1247,14 +1284,13 @@ function stepDocuments() {
         required: true,
         icon: 'fa-file-certificate',
         hint: 'Certificate of Good Conduct from the Kenya Police Service.',
-        preview: wizState.conductPreview,
+        hasFile: wizState.conductHasFile,
         fileName: wizState.conductFileName,
       })}
     </div>`;
 }
 
-function docUploadField({ id, label, required, icon, hint, preview, fileName }) {
-  const hasFile = !!preview;
+function docUploadField({ id, label, required, icon, hint, hasFile, fileName }) {
   return `
     <div class="wiz-doc-field" id="field-${id}">
       <div class="wiz-doc-label">
@@ -1263,10 +1299,9 @@ function docUploadField({ id, label, required, icon, hint, preview, fileName }) 
       <div class="wiz-doc-hint">${hint}</div>
       <div class="wiz-upload-zone ${hasFile ? 'has-file' : ''}" id="zone-${id}" onclick="document.getElementById('${id}').click()">
         ${hasFile
-          ? `<img src="${preview}" class="wiz-preview-img" alt="Preview">
-             <div class="wiz-file-overlay">
-               <i class="fas fa-check-circle"></i>
-               <span>${fileName || 'File selected'}</span>
+          ? `<div class="wiz-file-overlay" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px">
+               <i class="fas fa-check-circle" style="font-size:24px;color:#3db83a"></i>
+               <span style="font-size:13px;font-weight:700;color:#0d1a0d">${escWiz(fileName || 'File selected')}</span>
                <span class="wiz-change-link">Tap to change</span>
              </div>`
           : `<div class="wiz-upload-placeholder">
@@ -1281,7 +1316,7 @@ function docUploadField({ id, label, required, icon, hint, preview, fileName }) 
 }
 
 function stepReview() {
-  const allDocs = wizState.selfiePreview && wizState.idPreview && wizState.conductPreview;
+  const allDocs = wizState.selfieHasFile && wizState.idHasFile && wizState.conductHasFile;
   return `
     <div class="wiz-step-content">
       <div class="wiz-step-header">
@@ -1316,9 +1351,9 @@ function stepReview() {
       <div class="wiz-docs-review">
         <div class="wiz-review-label" style="margin-bottom:10px"><i class="fas fa-file-shield"></i> Documents</div>
         <div class="wiz-docs-grid">
-          ${wizDocThumb(wizState.selfiePreview, 'Selfie', 1)}
-          ${wizDocThumb(wizState.idPreview, 'National ID', 2)}
-          ${wizDocThumb(wizState.conductPreview, 'Police Cert', 3)}
+          ${wizDocThumb(wizState.selfieHasFile, wizState.selfieFileName || 'Selfie', 1)}
+          ${wizDocThumb(wizState.idHasFile, wizState.idFileName || 'National ID', 2)}
+          ${wizDocThumb(wizState.conductHasFile, wizState.conductFileName || 'Police Cert', 3)}
         </div>
       </div>
 
@@ -1334,12 +1369,14 @@ function stepReview() {
     </div>`;
 }
 
-function wizDocThumb(src, label, step) {
+function wizDocThumb(hasFile, label, step) {
   return `
-    <div class="wiz-doc-thumb ${src ? 'ready' : 'missing'}" onclick="wizGoTo(3)">
-      ${src ? `<img src="${src}" alt="${label}">` : `<i class="fas fa-circle-plus"></i>`}
-      <span>${label}</span>
-      ${src ? '<div class="wiz-thumb-tick"><i class="fas fa-check"></i></div>' : ''}
+    <div class="wiz-doc-thumb ${hasFile ? 'ready' : 'missing'}" onclick="wizGoTo(3)">
+      ${hasFile
+        ? `<i class="fas fa-check-circle" style="font-size:28px;color:#3db83a"></i>`
+        : `<i class="fas fa-circle-plus"></i>`}
+      <span>${escWiz(label)}</span>
+      ${hasFile ? '<div class="wiz-thumb-tick"><i class="fas fa-check"></i></div>' : ''}
     </div>`;
 }
 
@@ -1406,9 +1443,9 @@ function wizValidateStep(step) {
   }
   if (step === 3) {
     const missing = [];
-    if (!wizState.selfieFile  && !wizState.selfiePreview)  missing.push('Selfie');
-    if (!wizState.idFile      && !wizState.idPreview)      missing.push('National ID');
-    if (!wizState.conductFile && !wizState.conductPreview) missing.push('Police Clearance');
+    if (!wizState.selfieFile  && !wizState.selfieHasFile)  missing.push('Selfie');
+    if (!wizState.idFile      && !wizState.idHasFile)      missing.push('National ID');
+    if (!wizState.conductFile && !wizState.conductHasFile) missing.push('Police Clearance');
     if (missing.length) {
       wizShowToast(`Please upload: ${missing.join(', ')}`, 'warning');
       return false;
@@ -1509,34 +1546,38 @@ function wizHandleFile(inputId, input) {
   const MAX = 5 * 1024 * 1024;
   if (file.size > MAX) { wizShowToast('File is too large. Max 5MB.', 'warning'); input.value = ''; return; }
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const preview = file.type.startsWith('image/') ? e.target.result : null;
-    const displaySrc = preview || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24"><path fill="%233db83a" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>';
+  // B-02 fix: store the File object and filename flag only — never base64
+  // Base64-encoding three ID documents can exceed 15MB and silently blow localStorage quota
+  if (inputId === 'upload-selfie') {
+    wizState.selfieFile     = file;
+    wizState.selfieFileName = file.name;
+    wizState.selfieHasFile  = true;
+  } else if (inputId === 'upload-id') {
+    wizState.idFile     = file;
+    wizState.idFileName = file.name;
+    wizState.idHasFile  = true;
+  } else if (inputId === 'upload-conduct') {
+    wizState.conductFile     = file;
+    wizState.conductFileName = file.name;
+    wizState.conductHasFile  = true;
+  }
+  wizSave();
 
-    if (inputId === 'upload-selfie') {
-      wizState.selfieFile = file; wizState.selfiePreview = displaySrc; wizState.selfieFileName = file.name;
-    } else if (inputId === 'upload-id') {
-      wizState.idFile = file; wizState.idPreview = displaySrc; wizState.idFileName = file.name;
-    } else if (inputId === 'upload-conduct') {
-      wizState.conductFile = file; wizState.conductPreview = displaySrc; wizState.conductFileName = file.name;
-    }
-    wizSave();
-
-    // Refresh the upload zone in-place
-    const zone = document.getElementById(`zone-${inputId}`);
-    if (zone) {
-      zone.classList.add('has-file');
-      zone.innerHTML = `
-        <img src="${displaySrc}" class="wiz-preview-img" alt="Preview">
-        <div class="wiz-file-overlay">
-          <i class="fas fa-check-circle"></i>
-          <span>${file.name}</span>
-          <span class="wiz-change-link">Tap to change</span>
-        </div>`;
-    }
-  };
-  reader.readAsDataURL(file);
+  // Show a live preview in the upload zone using a temporary object URL
+  // (object URLs are session-only and never stored in localStorage)
+  const zone = document.getElementById(`zone-${inputId}`);
+  if (zone) {
+    const isImage = file.type.startsWith('image/');
+    const previewSrc = isImage ? URL.createObjectURL(file) : null;
+    zone.classList.add('has-file');
+    zone.innerHTML = `
+      ${previewSrc ? `<img src="${previewSrc}" class="wiz-preview-img" alt="Preview">` : `<div class="wiz-upload-placeholder"><i class="fas fa-file-check" style="color:#3db83a;font-size:26px"></i></div>`}
+      <div class="wiz-file-overlay">
+        <i class="fas fa-check-circle"></i>
+        <span>${escWiz(file.name)}</span>
+        <span class="wiz-change-link">Tap to change</span>
+      </div>`;
+  }
 }
 
 // ── DECLARATION TOGGLE ──
@@ -1554,9 +1595,9 @@ async function wizSubmit() {
   // Final validation
   if (!wizState.fullName)       { wizShowToast('Missing name — go back to Profile', 'warning'); wizGoTo(1); return; }
   if (!wizState.locationName)   { wizShowToast('Missing location — go back to Location', 'warning'); wizGoTo(2); return; }
-  if (!wizState.selfieFile && !wizState.selfiePreview)  { wizShowToast('Missing selfie', 'warning'); wizGoTo(3); return; }
-  if (!wizState.idFile && !wizState.idPreview)          { wizShowToast('Missing National ID', 'warning'); wizGoTo(3); return; }
-  if (!wizState.conductFile && !wizState.conductPreview){ wizShowToast('Missing Police Clearance', 'warning'); wizGoTo(3); return; }
+  if (!wizState.selfieFile && !wizState.selfieHasFile)  { wizShowToast('Missing selfie', 'warning'); wizGoTo(3); return; }
+  if (!wizState.idFile && !wizState.idHasFile)          { wizShowToast('Missing National ID', 'warning'); wizGoTo(3); return; }
+  if (!wizState.conductFile && !wizState.conductHasFile){ wizShowToast('Missing Police Clearance', 'warning'); wizGoTo(3); return; }
 
   try {
     const { data: { user } } = await client.auth.getUser();
