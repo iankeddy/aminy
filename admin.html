@@ -906,9 +906,17 @@ async function doLogin() {
     const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
     if(error) throw error;
     const { data: profile, error: pe } = await db.from('profiles').select('role,full_name').eq('id',data.user.id).maybeSingle();
-    if(pe || !profile || profile.role !== 'admin') {
+    if(pe) {
       await db.auth.signOut();
-      throw new Error('Access denied. Admin accounts only.');
+      throw new Error('Profile read failed: ' + pe.message);
+    }
+    if(!profile) {
+      await db.auth.signOut();
+      throw new Error('No profile found for this account. Create one in Supabase profiles table with role = admin.');
+    }
+    if(profile.role !== 'admin') {
+      await db.auth.signOut();
+      throw new Error('Access denied. This account has role="' + profile.role + '" — set it to "admin" in Supabase.');
     }
     // Fetch admin_role separately — gracefully handles case where column doesn't exist yet
     let adminRole = null;
