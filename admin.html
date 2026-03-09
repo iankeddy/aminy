@@ -280,12 +280,12 @@ a { text-decoration:none; color:inherit }
 /* Nav */
 .sb-nav { flex:1; padding:8px 7px; overflow-y:auto; overflow-x:hidden }
 
-.sb-sec {
+.sb-section-label {
   font-size: 9px; font-weight:700; letter-spacing:1.6px; color:var(--t3);
   text-transform: uppercase; padding:12px 11px 4px;
   white-space: nowrap; transition:opacity var(--ease);
 }
-.sidebar.collapsed .sb-sec { opacity:0 }
+.sidebar.collapsed .sb-section-label { opacity:0 }
 
 .sb-item {
   display: flex; align-items: center; gap: 10px;
@@ -311,13 +311,13 @@ a { text-decoration:none; color:inherit }
 .sb-item.active .sb-icon { color: var(--a) }
 .sb-item:hover:not(.active) .sb-icon { color: var(--t1) }
 
-.sb-label {
+.sb-text {
   font-size: 12.5px; font-weight: 500; color: var(--t2);
   transition: opacity var(--ease), color var(--ease);
 }
-.sb-item.active .sb-label { color: var(--t1); font-weight: 600 }
-.sb-item:hover:not(.active) .sb-label { color: var(--t1) }
-.sidebar.collapsed .sb-label { opacity:0; pointer-events:none }
+.sb-item.active .sb-text { color: var(--t1); font-weight: 600 }
+.sb-item:hover:not(.active) .sb-text { color: var(--t1) }
+.sidebar.collapsed .sb-text { opacity:0; pointer-events:none }
 
 .sb-badge {
   margin-left: auto; background: var(--amber); color: #000;
@@ -328,7 +328,7 @@ a { text-decoration:none; color:inherit }
 }
 .sidebar.collapsed .sb-badge { opacity:0 }
 
-.sb-tip {
+.sb-tooltip {
   position: absolute; left: calc(100% + 10px); top:50%;
   transform: translateY(-50%);
   background: var(--card-solid); color: var(--t1);
@@ -337,8 +337,8 @@ a { text-decoration:none; color:inherit }
   white-space: nowrap; pointer-events: none; opacity:0;
   transition: opacity var(--ease); box-shadow: var(--sh1); z-index: 200;
 }
-.sidebar.collapsed .sb-item:hover .sb-tip { opacity:1 }
-.sb-div { height:1px; background:var(--b1); margin:5px 7px }
+.sidebar.collapsed .sb-item:hover .sb-tooltip { opacity:1 }
+.sb-divider { height:1px; background:var(--b1); margin:5px 7px }
 
 /* Footer */
 .sb-foot { padding:8px 7px 10px; border-top:1px solid var(--b1); flex-shrink:0 }
