@@ -721,6 +721,7 @@ body {
     <div id="gig-vetted-flag"></div>
     <div class="modal-body" id="gig-modal-body"></div>
     <div id="gig-modal-reviews"></div>
+    <div id="gig-modal-badges"></div>
     <div class="modal-cta" id="gig-modal-cta"></div>
   </div>
 </div>
@@ -735,6 +736,7 @@ body {
     <div id="vetted-flag"></div>
     <div class="modal-body" id="modal-body-content"></div>
     <div id="modal-reviews-wrap" style="border-top:1px solid #edf3ed"></div>
+    <div id="modal-badges-wrap"></div>
     <div class="modal-cta" id="modal-cta"></div>
   </div>
 </div>
@@ -986,6 +988,15 @@ function helperCardHTML(h, i) {
         <span class="reviews-cnt">(${jobs})</span>
       </div>` : `<div class="helper-rating"><span style="font-size:11px;color:var(--text-muted)">New helper</span></div>`}
       <div class="helper-location"><i class="fas fa-map-marker-alt"></i>${h.location_name||'Kenya'}</div>
+      ${(()=>{
+        const chips = [];
+        const jobs = h.total_jobs || 0;
+        const avg  = parseFloat(h.avg_rating) || 0;
+        if (jobs >= 10) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;background:#e0f2fe;color:#0369a1;border-radius:20px;font-size:10px;font-weight:700"><i class="fas fa-briefcase" style="font-size:8px"></i>Pro</span>');
+        else if (jobs >= 5) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;background:#fef3c7;color:#d97706;border-radius:20px;font-size:10px;font-weight:700"><i class="fas fa-star" style="font-size:8px"></i>Rising Star</span>');
+        if (avg >= 4.5 && jobs >= 3) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;background:#fff7ed;color:#b45309;border-radius:20px;font-size:10px;font-weight:700"><i class="fas fa-trophy" style="font-size:8px"></i>Top Rated</span>');
+        return chips.length ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">' + chips.join('') + '</div>' : '';
+      })()}
     </div>
     <div class="helper-footer">
       <div>
@@ -1098,6 +1109,15 @@ async function openHelperModal(id) {
     });
   }
 
+  // Inject badges into modal
+  const badgesWrap = document.getElementById('modal-badges-wrap');
+  if (badgesWrap) {
+    badgesWrap.innerHTML = '';
+    getHelperBadges?.(h.id).then(badges => {
+      badgesWrap.innerHTML = renderBadgeShowcase?.(badges) || '';
+    });
+  }
+
   document.getElementById('helper-modal').classList.add('open');
 }
 
@@ -1191,6 +1211,15 @@ async function openGigModal(gigId) {
     } else {
       reviewsWrap.innerHTML = '';
     }
+  }
+
+  // Badges
+  const gigBadgesWrap = document.getElementById('gig-modal-badges');
+  if (gigBadgesWrap && h.id) {
+    gigBadgesWrap.innerHTML = '';
+    getHelperBadges?.(h.id).then(badges => {
+      gigBadgesWrap.innerHTML = renderBadgeShowcase?.(badges) || '';
+    });
   }
 
   document.getElementById('gig-modal-cta').innerHTML = `
@@ -1444,5 +1473,6 @@ function showToast(msg, type='') {
 
 <script>document.addEventListener("DOMContentLoaded", () => initNav("market"));</script>
 
+  <script src="badges.js"></script>
 </body>
 </html>
