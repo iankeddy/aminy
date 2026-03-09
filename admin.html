@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="manifest" href="../manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3db83a">
-<link rel="icon" type="image/png" href="../images/icon-192.png">
+<link rel="icon" type="image/png" href="images/icon-192.png">
 <title>Aminy Admin — Control Center</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
@@ -905,12 +905,14 @@ async function doLogin() {
   try {
     const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
     if(error) throw error;
-    const { data: profile, error: pe } = await db.from('profiles').select('role,full_name,admin_role').eq('id',data.user.id).maybeSingle();
+    const { data: profile, error: pe } = await db.from('profiles').select('role,full_name').eq('id',data.user.id).maybeSingle();
     if(pe || !profile || profile.role !== 'admin') {
       await db.auth.signOut();
       throw new Error('Access denied. Admin accounts only.');
     }
-    currentUser = { ...data.user, ...profile };
+    // Fetch admin_role separately — gracefully handles case where column doesn't exist yet
+    const { data: roleData } = await db.from('profiles').select('admin_role').eq('id',data.user.id).maybeSingle().catch(()=>({data:null}));
+    currentUser = { ...data.user, ...profile, admin_role: roleData?.admin_role || null };
     await logAction('login', 'auth', currentUser.id, { email: currentUser.email });
     bootDashboard();
   } catch(e) {
@@ -971,9 +973,11 @@ async function bootDashboard() {
 window.addEventListener('load', async () => {
   const { data: { session } } = await db.auth.getSession();
   if(session) {
-    const { data: profile } = await db.from('profiles').select('role,full_name,admin_role').eq('id',session.user.id).maybeSingle();
+    const { data: profile } = await db.from('profiles').select('role,full_name').eq('id',session.user.id).maybeSingle();
     if(profile && profile.role==='admin') {
-      currentUser = { ...session.user, ...profile };
+      // Fetch admin_role separately — graceful if column doesn't exist yet
+      const { data: roleData } = await db.from('profiles').select('admin_role').eq('id',session.user.id).maybeSingle().catch(()=>({data:null}));
+      currentUser = { ...session.user, ...profile, admin_role: roleData?.admin_role || null };
       bootDashboard();
       return;
     }
