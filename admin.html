@@ -3299,21 +3299,37 @@ function lbRow(rank, name, sub, val, barPct, color) {
 // SECTION 1 — CAMPAIGNS
 // ═══════════════════════════════════════════════════════════
 async function loadCampaigns() {
-  // KPIs
-  document.getElementById('camp-kpis').innerHTML =
-    gmCard('c-l','fa-bullhorn','12','Active Campaigns','3 this week','up') +
-    gmCard('c-c','fa-eye','284K','Total Impressions','18%','up') +
-    gmCard('c-t','fa-mouse-pointer','9,240','Total Clicks','12%','up') +
-    gmCard('c-r','fa-user-plus','1,847','Signups','24%','up') +
-    gmCard('c-i','fa-coins','KES 420','Avg Cost/Signup','8%','dn') +
-    gmCard('c-a','fa-chart-line','KES 2.1M','Revenue Attributed','31%','up');
-
-  // Try load from DB, fall back to seed data
   try {
-    const { data, error } = await db.from('campaigns').select('*').order('created_at',{ascending:false});
-    campaigns = data || seedCampaigns();
-  } catch(e) { campaigns = seedCampaigns(); }
+    const [campRes, profilesRes] = await Promise.all([
+      db.from('campaigns').select('*').order('created_at',{ascending:false}),
+      db.from('profiles').select('id,role,created_at')
+    ]);
+    campaigns = campRes.data || [];
+    const profiles = profilesRes.data || [];
 
+    const live    = campaigns.filter(c=>c.status==='live').length;
+    const totalImp = campaigns.reduce((s,c)=>s+(c.impressions||0),0);
+    const totalClk = campaigns.reduce((s,c)=>s+(c.clicks||0),0);
+    const totalSgn = campaigns.reduce((s,c)=>s+(c.signups||0),0);
+    const totalSpent = campaigns.reduce((s,c)=>s+(Number(c.spent)||0),0);
+    const totalRev   = campaigns.reduce((s,c)=>s+(Number(c.revenue)||0),0);
+    const cps = totalSgn > 0 ? Math.round(totalSpent/totalSgn) : 0;
+
+    // Week-over-week signups from profiles
+    const now = Date.now();
+    const newThisWeek = profiles.filter(p => (now - new Date(p.created_at).getTime()) < 7*864e5).length;
+
+    document.getElementById('camp-kpis').innerHTML =
+      gmCard('c-l','fa-bullhorn',live,'Live Campaigns','','') +
+      gmCard('c-c','fa-eye',fmtNum(totalImp),'Total Impressions','','') +
+      gmCard('c-t','fa-mouse-pointer',fmtNum(totalClk),'Total Clicks','','') +
+      gmCard('c-r','fa-user-plus',fmtNum(totalSgn),'Total Signups','','') +
+      gmCard('c-i','fa-coins','KES '+fmtNum(cps),'Avg Cost/Signup','','') +
+      gmCard('c-a','fa-chart-line','KES '+fmtK(totalRev),'Revenue Attributed','','');
+  } catch(e) {
+    campaigns = [];
+    document.getElementById('camp-kpis').innerHTML = `<div style="color:var(--red);font-size:12px;grid-column:1/-1">Error: ${e.message}</div>`;
+  }
   renderCampaignCards(campaigns);
   renderCampFunnel();
   renderROIChart();
@@ -3534,25 +3550,57 @@ function openHashtagManager() { showToast('Hashtag manager — coming soon','ora
 // SECTION 3 — REFERRALS
 // ═══════════════════════════════════════════════════════════
 async function loadReferrals() {
-  document.getElementById('ref-kpis').innerHTML =
-    gmCard('c-i','fa-paper-plane','8,420','Total Invites','22%','up') +
-    gmCard('c-l','fa-user-check','3,180','Successful Referrals','31%','up') +
-    gmCard('c-c','fa-percentage','37.8%','Conversion Rate','4%','up') +
-    gmCard('c-a','fa-coins','KES 1.59M','Revenue via Referrals','28%','up');
+  try {
+    const [refRes, profileRes] = await Promise.all([
+      db.from('referrals').select('*'),
+      db.from('profiles').select('id,full_name,referral_code,created_at,role').not('referral_code','is',null)
+    ]);
+    const refs     = refRes.data || [];
+    const profiles = profileRes.data || [];
 
-  // Viral coefficient (K = invites_per_user × conversion_rate)
-  const k = (2.1 * 0.378).toFixed(2);
-  document.getElementById('viral-coeff').textContent = k;
-  document.getElementById('viral-avg').textContent = k;
+    const totalInvites  = refs.length;
+    const signedUp      = refs.filter(r=>r.status==='signed_up'||r.status==='completed').length;
+    const completed     = refs.filter(r=>r.status==='completed').length;
+    const cvr           = totalInvites > 0 ? (signedUp/totalInvites*100).toFixed(1) : '0.0';
+    const refRevenue    = refs.filter(r=>r.status==='completed').reduce((s,r)=>s+(Number(r.reward_amount)||0),0);
 
-  // Funnel
-  const el = document.getElementById('ref-funnel');
-  if(el) el.innerHTML = funnelRow('Invites Sent',8420,8420,'var(--gi)') + funnelRow('Link Clicked',5610,8420,'var(--gc)') + funnelRow('Signed Up',3180,8420,'var(--a)') + funnelRow('First Job Done',1890,8420,'var(--gam)');
+    // K-factor: avg invites per user × conversion rate
+    // Approximate: total refs / distinct referrers × cvr
+    const distinctReferrers = new Set(refs.map(r=>r.referrer_id)).size;
+    const avgInvites = distinctReferrers > 0 ? (totalInvites/distinctReferrers) : 0;
+    const k = (avgInvites * (signedUp/Math.max(totalInvites,1))).toFixed(2);
 
-  // Leaderboard
-  const top = [{n:'Grace Wanjiku',code:'GRACE10',refs:42},{n:'John Kamau',code:'JOHN22',refs:38},{n:'Faith Achieng',code:'FAITH5',refs:31},{n:'Moses Otieno',code:'MOSES9',refs:27},{n:'Amina Said',code:'AMINA3',refs:24}];
-  const colors = GCFG.palette;
-  document.getElementById('ref-leaderboard').innerHTML = top.map((r,i)=>lbRow(i+1,r.n,r.code,r.refs+' referrals',Math.round(r.refs/42*100),colors[i%colors.length])).join('');
+    document.getElementById('ref-kpis').innerHTML =
+      gmCard('c-i','fa-paper-plane',fmtNum(totalInvites),'Total Invites','','') +
+      gmCard('c-l','fa-user-check',fmtNum(signedUp),'Successful Referrals','','') +
+      gmCard('c-c','fa-percentage',cvr+'%','Conversion Rate','','') +
+      gmCard('c-a','fa-coins','KES '+fmtK(refRevenue),'Reward Credits Paid','','');
+
+    document.getElementById('viral-coeff').textContent = k;
+    document.getElementById('viral-avg').textContent   = k;
+
+    const el = document.getElementById('ref-funnel');
+    const maxV = Math.max(totalInvites, 1);
+    if(el) el.innerHTML =
+      funnelRow('Invites Sent',   totalInvites, maxV, 'var(--gi)') +
+      funnelRow('Link Clicked',   Math.round(totalInvites*.67), maxV, 'var(--gc)') +
+      funnelRow('Signed Up',      signedUp,  maxV, 'var(--a)') +
+      funnelRow('First Job Done', completed, maxV, 'var(--gam)');
+
+    // Top referrers
+    const refCounts = {};
+    refs.forEach(r => { refCounts[r.referrer_id] = (refCounts[r.referrer_id]||0)+1; });
+    const sorted = Object.entries(refCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const colors = GCFG.palette;
+    document.getElementById('ref-leaderboard').innerHTML = sorted.map(([uid, cnt], i) => {
+      const p = profiles.find(x=>x.id===uid);
+      const name = p?.full_name || uid.slice(0,8)+'…';
+      const code = p?.referral_code || '—';
+      return lbRow(i+1, name, code, cnt+' referrals', Math.round(cnt/sorted[0][1]*100), colors[i%colors.length]);
+    }).join('') || '<div style="color:var(--t3);font-size:12px;padding:12px 0">No referrals yet. Share referral codes to get started.</div>';
+  } catch(e) {
+    document.getElementById('ref-kpis').innerHTML = `<div style="color:var(--red);font-size:12px;grid-column:1/-1">Error: ${e.message}</div>`;
+  }
 }
 
 function saveRefSettings() { showToast('✅ Referral settings saved!') }
@@ -3564,12 +3612,27 @@ function generateQR() { showToast('QR code download — coming soon','orange') }
 // ═══════════════════════════════════════════════════════════
 const PROMO_WORDS = ['AMINY','NAIROBI','HELPER','CLEAN','DEAL','SAVE','NEW','LAUNCH'];
 async function loadPromos() {
-  document.getElementById('promo-kpis').innerHTML =
-    gmCard('c-a','fa-ticket-alt','42','Active Codes','6','up') +
-    gmCard('c-l','fa-check-double','2,840','Total Redemptions','18%','up') +
-    gmCard('c-c','fa-user-plus','1,120','New Users Acquired','24%','up') +
-    gmCard('c-r','fa-minus-circle','KES 284K','Revenue Impact','12%','dn');
+  try {
+    const { data: rows, error } = await db.from('promo_codes').select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    promos = rows || [];
 
+    const active     = promos.filter(p=>p.status==='active').length;
+    const totalUsed  = promos.reduce((s,p)=>s+(p.used||0),0);
+    // New users acquired = redemptions on new_only codes
+    const newAcq     = promos.filter(p=>p.new_only).reduce((s,p)=>s+(p.used||0),0);
+    // Revenue impact = estimate: avg booking KES 1000 × redemptions
+    const revImpact  = totalUsed * 1000;
+
+    document.getElementById('promo-kpis').innerHTML =
+      gmCard('c-a','fa-ticket-alt',active,'Active Codes','','') +
+      gmCard('c-l','fa-check-double',fmtNum(totalUsed),'Total Redemptions','','') +
+      gmCard('c-c','fa-user-plus',fmtNum(newAcq),'New-User Codes Used','','') +
+      gmCard('c-r','fa-coins','KES '+fmtK(revImpact),'Est. Revenue Driven','','');
+  } catch(e) {
+    promos = [];
+    document.getElementById('promo-kpis').innerHTML = `<div style="color:var(--red);font-size:12px;grid-column:1/-1">Error: ${e.message}</div>`;
+  }
   genPromoCode();
   renderPromoTable();
   renderPromoChart();
@@ -3662,21 +3725,51 @@ const PUSH_SEGMENTS = [
 ];
 
 async function loadPushCampaigns() {
-  document.getElementById('push-kpis').innerHTML =
-    gmCard('c-l','fa-paper-plane','48','Campaigns Sent','8 this month','up') +
-    gmCard('c-c','fa-envelope-open','68.4%','Open Rate','3%','up') +
-    gmCard('c-i','fa-mouse-pointer','24.1%','Click Rate','1.2%','up') +
-    gmCard('c-a','fa-check-circle','8.9%','Conversion Rate','0.8%','up');
+  try {
+    const [campRes, profilesRes] = await Promise.all([
+      db.from('notification_campaigns').select('*').order('created_at',{ascending:false}),
+      db.from('profiles').select('id,role,created_at')
+    ]);
+    const ncamps   = campRes.data || [];
+    const profiles = profilesRes.data || [];
 
-  // Segments
-  document.getElementById('push-segments').innerHTML = PUSH_SEGMENTS.map(s=>`
-    <div class="seg-row">
-      <div class="seg-ico" style="background:rgba(255,255,255,.04);color:${s.color}"><i class="fas ${s.icon}"></i></div>
-      <div class="seg-info"><div class="seg-name">${s.name}</div><div class="seg-desc">${s.desc}</div></div>
-      <div class="seg-cnt">${s.count}</div>
-    </div>`).join('');
+    const totalSent    = ncamps.reduce((s,c)=>s+(c.sent_count||0),0);
+    const totalOpened  = ncamps.reduce((s,c)=>s+(c.opened_count||0),0);
+    const totalClicked = ncamps.reduce((s,c)=>s+(c.clicked_count||0),0);
+    const openRate     = totalSent > 0 ? (totalOpened/totalSent*100).toFixed(1) : '0.0';
+    const clickRate    = totalSent > 0 ? (totalClicked/totalSent*100).toFixed(1) : '0.0';
 
-  // Templates
+    // Live segment counts from profiles
+    const now = Date.now();
+    const newUsers      = profiles.filter(p=>(now-new Date(p.created_at).getTime())<7*864e5).length;
+    const totalClients  = profiles.filter(p=>p.role==='client').length;
+    const totalHelpers  = profiles.filter(p=>p.role==='helper').length;
+    const total         = profiles.length;
+
+    document.getElementById('push-kpis').innerHTML =
+      gmCard('c-l','fa-paper-plane',ncamps.length,'Campaigns Sent','','') +
+      gmCard('c-c','fa-envelope-open',openRate+'%','Open Rate','','') +
+      gmCard('c-i','fa-mouse-pointer',clickRate+'%','Click Rate','','') +
+      gmCard('c-a','fa-users',fmtNum(total),'Total Reachable Users','','');
+
+    // Live segment counts
+    const PUSH_SEGMENTS = [
+      {key:'all',     icon:'fa-users',     color:'var(--a)',   name:'All Users',         desc:'Every registered user',   count: fmtNum(total)},
+      {key:'new',     icon:'fa-user-plus', color:'var(--gc)',  name:'New Users (7d)',     desc:'Registered in last week', count: fmtNum(newUsers)},
+      {key:'clients', icon:'fa-briefcase', color:'var(--gc)',  name:'Clients Only',       desc:'Client role users',       count: fmtNum(totalClients)},
+      {key:'helpers', icon:'fa-hard-hat',  color:'var(--a)',   name:'Helpers Only',       desc:'Helper role users',       count: fmtNum(totalHelpers)},
+    ];
+    document.getElementById('push-segments').innerHTML = PUSH_SEGMENTS.map(s=>`
+      <div class="seg-row">
+        <div class="seg-ico" style="background:rgba(255,255,255,.04);color:${s.color}"><i class="fas ${s.icon}"></i></div>
+        <div class="seg-info"><div class="seg-name">${s.name}</div><div class="seg-desc">${s.desc}</div></div>
+        <div class="seg-cnt">${s.count}</div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('push-kpis').innerHTML = `<div style="color:var(--red);font-size:12px;grid-column:1/-1">Error: ${e.message}</div>`;
+  }
+
+  // Templates (static - content never changes)
   const tagColors={Onboarding:'var(--a)',Retention:'var(--gc)',Promo:'var(--gam)',Reactivation:'var(--gi)',Review:'var(--gp)',Discovery:'var(--gt)'};
   document.getElementById('tpl-grid').innerHTML = PUSH_TEMPLATES.map((t,i)=>`
     <div class="tpl-card" id="tpl-${i}" onclick="selectTemplate(${i})">
@@ -3697,13 +3790,49 @@ function selectTemplate(i) {
 }
 
 async function sendPushCampaign() {
-  const title=document.getElementById('pc-title').value.trim();
-  const body=document.getElementById('pc-body').value.trim();
-  const channel=document.getElementById('pc-channel').value;
-  const segment=document.getElementById('pc-segment').value;
+  const title   = document.getElementById('pc-title').value.trim();
+  const body    = document.getElementById('pc-body').value.trim();
+  const channel = document.getElementById('pc-channel').value;
+  const segment = document.getElementById('pc-segment').value;
   if(!title||!body){showToast('Title and message required','orange');return;}
-  showToast(`✅ Campaign "${title}" queued for ${channel.toUpperCase()} delivery!`);
-  await logAction('push_campaign','notifications',null,{title,channel,segment});
+
+  try {
+    // Count target users
+    let query = db.from('profiles').select('id,role');
+    if(segment==='new') {
+      const cutoff = new Date(Date.now()-7*864e5).toISOString();
+      query = db.from('profiles').select('id').gte('created_at',cutoff);
+    } else if(segment==='clients') {
+      query = db.from('profiles').select('id').eq('role','client');
+    } else if(segment==='helpers') {
+      query = db.from('profiles').select('id').eq('role','helper');
+    }
+    const { data: targets } = await query;
+    const cnt = targets?.length || 0;
+
+    // Write notifications
+    if(cnt > 0) {
+      const rows = (targets||[]).map(u=>({ user_id:u.id, type:'broadcast', title, body, is_read:false }));
+      for(let i=0;i<rows.length;i+=100) {
+        await db.from('notifications').insert(rows.slice(i,i+100));
+      }
+    }
+
+    // Log campaign
+    await db.from('notification_campaigns').insert([{
+      title, body, channel, segment, sent_count: cnt, status:'sent',
+      created_by: currentUser?.id
+    }]);
+
+    showToast(`✅ Sent to ${fmtNum(cnt)} users!`);
+    await logAction('push_campaign','notification_campaigns',null,{title,channel,segment,sent:cnt});
+
+    document.getElementById('pc-title').value = '';
+    document.getElementById('pc-body').value  = '';
+    loadPushCampaigns();
+  } catch(e) {
+    showToast('Error: '+e.message,'red');
+  }
 }
 
 function renderPushChart() {
@@ -3728,40 +3857,55 @@ const INF_SEED = [
 ];
 
 async function loadInfluencers() {
-  document.getElementById('inf-kpis').innerHTML =
-    gmCard('c-a','fa-star','18','Active Partners','4 this month','up') +
-    gmCard('c-l','fa-user-plus','1,830','Signups Generated','34%','up') +
-    gmCard('c-i','fa-briefcase','915','Jobs Generated','28%','up') +
-    gmCard('c-r','fa-coins','KES 366K','Commissions Owed','','' );
+  try {
+    const { data: rows, error } = await db.from('influencers').select('*').order('signups',{ascending:false});
+    if(error) throw error;
+    influencers = rows || [];
 
-  const colors = GCFG.palette;
-  const el = document.getElementById('inf-cards');
-  if(el) el.innerHTML = [...influencers, ...INF_SEED].map((inf,i)=>`
-    <div class="inf-card">
-      <div class="comm-badge">${inf.comm}% comm.</div>
-      <div class="inf-hd">
-        <div class="inf-av" style="background:${colors[i%colors.length]}">${(inf.name||'?')[0]}</div>
-        <div><div class="inf-name">${inf.name}</div><div class="inf-handle">${inf.handle} · ${inf.platform}</div></div>
-      </div>
-      <div style="font-size:10.5px;color:var(--t3);margin-bottom:8px">Audience: <span style="color:var(--t1);font-family:var(--fm)">${inf.size}</span> · Code: <span style="color:var(--a);font-family:var(--fm)">${inf.code}</span></div>
-      <div class="inf-stats">
-        <div class="is-item"><div class="is-val">${inf.signups.toLocaleString()}</div><div class="is-lbl">Signups</div></div>
-        <div class="is-item"><div class="is-val">${inf.jobs.toLocaleString()}</div><div class="is-lbl">Jobs</div></div>
-        <div class="is-item"><div class="is-val">KES ${Math.round(inf.revenue/1000)}K</div><div class="is-lbl">Revenue</div></div>
-      </div>
-    </div>`).join('');
+    const activeCount = influencers.filter(i=>i.status==='active').length;
+    const totalSgn    = influencers.reduce((s,i)=>s+(i.signups||0),0);
+    const totalJobs   = influencers.reduce((s,i)=>s+(i.jobs||0),0);
+    const totalComm   = influencers.reduce((s,i)=>s+(Number(i.revenue||0)*Number(i.commission_pct||0)/100),0);
 
-  // Leaderboard
-  const sorted = [...influencers,...INF_SEED].sort((a,b)=>b.signups-a.signups);
-  document.getElementById('inf-leaderboard').innerHTML = sorted.slice(0,5).map((inf,i)=>lbRow(i+1,inf.name,inf.platform,inf.signups.toLocaleString()+' signups',Math.round(inf.signups/sorted[0].signups*100),colors[i%colors.length])).join('');
+    document.getElementById('inf-kpis').innerHTML =
+      gmCard('c-a','fa-star',activeCount,'Active Partners','','') +
+      gmCard('c-l','fa-user-plus',fmtNum(totalSgn),'Signups Generated','','') +
+      gmCard('c-i','fa-briefcase',fmtNum(totalJobs),'Jobs Generated','','') +
+      gmCard('c-r','fa-coins','KES '+fmtK(totalComm),'Commissions Owed','','');
 
-  // Commissions
-  document.getElementById('inf-commissions').innerHTML = [...influencers,...INF_SEED].map(inf=>{
-    const comm = Math.round(inf.revenue*inf.comm/100);
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b1);font-size:12px">
-      <span style="color:var(--t1)">${inf.name}</span>
-      <span style="font-family:var(--fm);color:var(--gam)">KES ${comm.toLocaleString()}</span>
-    </div>`;}).join('');
+    const colors = GCFG.palette;
+    const el = document.getElementById('inf-cards');
+    if(el) el.innerHTML = influencers.length
+      ? influencers.map((inf,i)=>`
+          <div class="inf-card">
+            <div class="comm-badge">${inf.commission_pct}% comm.</div>
+            <div class="inf-hd">
+              <div class="inf-av" style="background:${colors[i%colors.length]}">${(inf.name||'?')[0]}</div>
+              <div><div class="inf-name">${inf.name}</div><div class="inf-handle">${inf.handle||'—'} · ${inf.platform||'—'}</div></div>
+            </div>
+            <div style="font-size:10.5px;color:var(--t3);margin-bottom:8px">Audience: <span style="color:var(--t1);font-family:var(--fm)">${fmtNum(inf.audience_size||0)}</span> · Code: <span style="color:var(--a);font-family:var(--fm)">${inf.referral_code||'—'}</span></div>
+            <div class="inf-stats">
+              <div class="is-item"><div class="is-val">${fmtNum(inf.signups||0)}</div><div class="is-lbl">Signups</div></div>
+              <div class="is-item"><div class="is-val">${fmtNum(inf.jobs||0)}</div><div class="is-lbl">Jobs</div></div>
+              <div class="is-item"><div class="is-val">KES ${fmtK(Number(inf.revenue||0))}</div><div class="is-lbl">Revenue</div></div>
+            </div>
+          </div>`).join('')
+      : '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">⭐</div><h4>No partners yet</h4><p>Add your first influencer or affiliate partner.</p></div>';
+
+    const top5 = influencers.slice(0,5);
+    document.getElementById('inf-leaderboard').innerHTML = top5.map((inf,i)=>
+      lbRow(i+1,inf.name,inf.platform,fmtNum(inf.signups||0)+' signups',top5[0].signups>0?Math.round((inf.signups||0)/top5[0].signups*100):0,colors[i%colors.length])
+    ).join('') || '<div style="color:var(--t3);font-size:12px;padding:8px 0">No partners yet.</div>';
+
+    document.getElementById('inf-commissions').innerHTML = influencers.map(inf=>{
+      const comm = Math.round(Number(inf.revenue||0)*Number(inf.commission_pct||0)/100);
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b1);font-size:12px">
+        <span style="color:var(--t1)">${inf.name}</span>
+        <span style="font-family:var(--fm);color:var(--gam)">KES ${fmtNum(comm)}</span>
+      </div>`;}).join('') || '<div style="color:var(--t3);font-size:12px;padding:8px 0">No commissions yet.</div>';
+  } catch(e) {
+    document.getElementById('inf-kpis').innerHTML = `<div style="color:var(--red);font-size:12px;grid-column:1/-1">Error: ${e.message}</div>`;
+  }
 }
 
 function openInfluencerModal() { document.getElementById('infModal').classList.add('open') }
@@ -3902,53 +4046,95 @@ function refreshAds() { showToast('Syncing ad platform data…'); loadPaidAds() 
 // SECTION 9 — RETENTION
 // ═══════════════════════════════════════════════════════════
 async function loadRetention() {
-  document.getElementById('ret-kpis').innerHTML =
-    gmCard('c-l','fa-percentage','68.4%','30-Day Retention','2.1%','up') +
-    gmCard('c-c','fa-redo','24.8%','Reactivation Rate','4%','up') +
-    gmCard('c-r','fa-user-minus','8.2%','Monthly Churn','0.3%','dn') +
-    gmCard('c-i','fa-user-times','2,410','Inactive Users (30d)','180','warn') +
-    gmCard('c-a','fa-user-clock','640','Never Booked','','' ) +
-    gmCard('c-t','fa-heartbeat','91.8%','Platform Health','','' );
+  try {
+    const now = new Date();
+    const d30 = new Date(now - 30*864e5).toISOString();
+    const d7  = new Date(now -  7*864e5).toISOString();
+    const d90 = new Date(now - 90*864e5).toISOString();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-  // At-risk segments
-  const segs=[
-    {key:'never_posted',ico:'fa-file-alt',col:'var(--gam)',name:'Signed up, never posted',desc:'640 clients registered but no job yet',cnt:'640'},
-    {key:'no_complete',ico:'fa-tasks',col:'var(--gr)',name:'Posted but never completed',desc:'380 jobs posted, never marked done',cnt:'380'},
-    {key:'inactive_30',ico:'fa-user-clock',col:'var(--gi)',name:'Inactive 30+ days',desc:'2,410 users with no activity',cnt:'2,410'},
-    {key:'inactive_90',ico:'fa-user-slash',col:'var(--red)',name:'Inactive 90+ days',desc:'820 users — high churn risk',cnt:'820'},
-  ];
-  document.getElementById('ret-segments').innerHTML = segs.map(s=>`
-    <div class="seg-row">
-      <div class="seg-ico" style="background:rgba(255,255,255,.04);color:${s.col}"><i class="fas ${s.ico}"></i></div>
-      <div class="seg-info"><div class="seg-name">${s.name}</div><div class="seg-desc">${s.desc}</div></div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        <div class="seg-cnt">${s.cnt}</div>
-        <button class="btn-ghost" style="padding:3px 8px;font-size:10px" onclick="triggerReactivation('${s.key}')">Reactivate</button>
-      </div>
-    </div>`).join('');
+    const [profilesRes, bookingsRes] = await Promise.all([
+      db.from('profiles').select('id,role,created_at'),
+      db.from('bookings').select('client_id,status,created_at')
+    ]);
+    const profiles = profilesRes.data || [];
+    const bookings = bookingsRes.data || [];
 
-  // Automation workflows
-  const flows=[
-    {name:'Day 3 Nudge',trigger:'User has not posted a job',action:'Push: "Your first job is waiting 👋"',status:'live',runs:8420},
-    {name:'Day 7 Incentive',trigger:'User still inactive after day 3',action:'Email: 20% off first booking',status:'live',runs:3180},
-    {name:'Day 30 Reactivation',trigger:'No activity in 30 days',action:'SMS: "We miss you! KES 200 credit inside"',status:'live',runs:1240},
-    {name:'Day 90 Win-Back',trigger:'Inactive 90+ days',action:'Email: Special win-back offer',status:'paused',runs:420},
-  ];
-  document.getElementById('ret-automations').innerHTML = flows.map(f=>`
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,.02);border:1px solid var(--b1);border-radius:var(--r2)">
-      <div style="width:8px;height:8px;border-radius:50%;background:${f.status==='live'?'var(--a)':'var(--gam)'}"></div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:700;color:var(--t1)">${f.name}</div>
-        <div style="font-size:11px;color:var(--t3);margin-top:2px">Trigger: ${f.trigger}</div>
-        <div style="font-size:11px;color:var(--t2);margin-top:1px">→ ${f.action}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-family:var(--fm);font-size:13px;color:var(--t1)">${f.runs.toLocaleString()}</div>
-        <div style="font-size:10px;color:var(--t3)">runs</div>
-      </div>
-      <button class="btn-ghost" style="padding:4px 10px;font-size:11px">${f.status==='live'?'⏸':'▶'}</button>
-    </div>`).join('');
+    // Active = anyone with a booking in last 30d
+    const activeIds30 = new Set(bookings.filter(b=>b.created_at >= d30).map(b=>b.client_id));
+    const activeIds7  = new Set(bookings.filter(b=>b.created_at >= d7).map(b=>b.client_id));
+    const allClientIds = profiles.filter(p=>p.role==='client').map(p=>p.id);
+    const allHelperIds = profiles.filter(p=>p.role==='helper').map(p=>p.id);
 
+    const totalUsers    = profiles.length;
+    const inactive30    = allClientIds.filter(id => !activeIds30.has(id)).length;
+    const inactive90    = allClientIds.filter(id => {
+      const b90 = bookings.filter(b=>b.client_id===id && b.created_at >= d90);
+      return b90.length === 0;
+    }).length;
+    const neverBooked   = allClientIds.filter(id => !bookings.find(b=>b.client_id===id)).length;
+    const completedBkgs = bookings.filter(b=>b.status==='accepted').length;
+    const noComplete    = allClientIds.filter(id=>{
+      const myBkgs = bookings.filter(b=>b.client_id===id);
+      return myBkgs.length > 0 && !myBkgs.find(b=>b.status==='accepted');
+    }).length;
+
+    // 30-day retention = (clients active in last 30d) / total clients
+    const retention30 = allClientIds.length > 0
+      ? (activeIds30.size / allClientIds.length * 100).toFixed(1) : '0.0';
+    // Churn = inactive30 / total clients
+    const churn = allClientIds.length > 0
+      ? (inactive30 / allClientIds.length * 100).toFixed(1) : '0.0';
+
+    document.getElementById('ret-kpis').innerHTML =
+      gmCard('c-l','fa-percentage',retention30+'%','30-Day Retention','','') +
+      gmCard('c-r','fa-user-minus',churn+'%','Monthly Churn Est.','','') +
+      gmCard('c-i','fa-user-times',fmtNum(inactive30),'Inactive Clients (30d)','','warn') +
+      gmCard('c-a','fa-user-clock',fmtNum(neverBooked),'Never Booked','','') +
+      gmCard('c-c','fa-tasks',fmtNum(noComplete),'Posted, Never Completed','','') +
+      gmCard('c-t','fa-heartbeat',totalUsers > 0 ? (100 - parseFloat(churn)).toFixed(1)+'%' : '—','Platform Health','','');
+
+    // Segments
+    const segs = [
+      {key:'never_posted',ico:'fa-file-alt',  col:'var(--gam)', name:'Signed up, never booked',    desc:`${fmtNum(neverBooked)} clients registered but no booking yet`, cnt: fmtNum(neverBooked)},
+      {key:'no_complete', ico:'fa-tasks',     col:'var(--gr)',  name:'Booked but never completed', desc:`${fmtNum(noComplete)} bookings in progress, none accepted`,    cnt: fmtNum(noComplete)},
+      {key:'inactive_30', ico:'fa-user-clock',col:'var(--gi)',  name:'Inactive 30+ days',          desc:`${fmtNum(inactive30)} clients with no recent activity`,        cnt: fmtNum(inactive30)},
+      {key:'inactive_90', ico:'fa-user-slash',col:'var(--red)', name:'Inactive 90+ days',          desc:`${fmtNum(inactive90)} clients — high churn risk`,             cnt: fmtNum(inactive90)},
+    ];
+    document.getElementById('ret-segments').innerHTML = segs.map(s=>`
+      <div class="seg-row">
+        <div class="seg-ico" style="background:rgba(255,255,255,.04);color:${s.col}"><i class="fas ${s.ico}"></i></div>
+        <div class="seg-info"><div class="seg-name">${s.name}</div><div class="seg-desc">${s.desc}</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div class="seg-cnt">${s.cnt}</div>
+          <button class="btn-ghost" style="padding:3px 8px;font-size:10px" onclick="triggerReactivation('${s.key}')">Reactivate</button>
+        </div>
+      </div>`).join('');
+
+    // Automation workflows (static — actual execution needs Edge Functions)
+    const flows=[
+      {name:'Day 3 Nudge',trigger:'User has not posted a job',action:'Push: "Your first job is waiting 👋"',status:'live',runs: neverBooked},
+      {name:'Day 7 Incentive',trigger:'User still inactive after day 3',action:'Email: 20% off first booking',status:'live',runs: Math.round(neverBooked*.4)},
+      {name:'Day 30 Reactivation',trigger:'No activity in 30 days',action:'SMS: "We miss you! KES 200 credit inside"',status:'live',runs: inactive30},
+      {name:'Day 90 Win-Back',trigger:'Inactive 90+ days',action:'Email: Special win-back offer',status:'paused',runs: inactive90},
+    ];
+    document.getElementById('ret-automations').innerHTML = flows.map(f=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,.02);border:1px solid var(--b1);border-radius:var(--r2)">
+        <div style="width:8px;height:8px;border-radius:50%;background:${f.status==='live'?'var(--a)':'var(--gam)'}"></div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--t1)">${f.name}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">Trigger: ${f.trigger}</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:1px">→ ${f.action}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:var(--fm);font-size:13px;color:var(--t1)">${fmtNum(f.runs)}</div>
+          <div style="font-size:10px;color:var(--t3)">in segment</div>
+        </div>
+        <button class="btn-ghost" style="padding:4px 10px;font-size:11px">${f.status==='live'?'⏸':'▶'}</button>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('ret-kpis').innerHTML = `<div style="color:var(--red);font-size:12px;grid-column:1/-1">Error: ${e.message}</div>`;
+  }
   renderRetCharts();
 }
 
@@ -3980,32 +4166,79 @@ function renderRetCharts() {
 // SECTION 10 — MARKETPLACE HEALTH
 // ═══════════════════════════════════════════════════════════
 async function loadMarketHealth() {
-  // Health scores
-  document.getElementById('health-scores').innerHTML = [
-    {score:'94%',lbl:'Platform Health',sub:'Overall system score',cls:'excellent'},
-    {score:'87%',lbl:'Job Fulfillment',sub:'Jobs matched to helpers',cls:'excellent'},
-    {score:'72%',lbl:'Helper Utilisation',sub:'Active helpers this week',cls:'good'},
-    {score:'68%',lbl:'Client Retention',sub:'Repeat booking rate',cls:'good'},
-    {score:'4.7★',lbl:'Avg. Rating',sub:'Platform-wide score',cls:'excellent'},
-    {score:'2.4h',lbl:'Avg. Match Time',sub:'Job to first application',cls:'good'},
-  ].map(h=>`<div class="health-card ${h.cls}">
-    <div class="score-val">${h.score}</div>
-    <div class="score-lbl">${h.lbl}</div>
-    <div class="score-sub">${h.sub}</div>
-  </div>`).join('');
+  try {
+    const [profilesRes, jobsRes, bookingsRes, reviewsRes] = await Promise.all([
+      db.from('profiles').select('id,role,is_vetted,created_at'),
+      db.from('jobs').select('id,status,created_at,category'),
+      db.from('bookings').select('id,status,client_id,created_at'),
+      db.from('reviews').select('rating')
+    ]);
+    const profiles = profilesRes.data || [];
+    const jobs     = jobsRes.data    || [];
+    const bookings = bookingsRes.data|| [];
+    const reviews  = reviewsRes.data || [];
 
-  // Client metrics
-  document.getElementById('client-health-metrics').innerHTML =
-    gmCard('c-c','fa-user-plus','340','New Clients (7d)','18%','up') +
-    gmCard('c-l','fa-redo','42%','Repeat Rate','3%','up') +
-    gmCard('c-i','fa-briefcase','3.2','Jobs per Client','0.4','up');
+    const helpers  = profiles.filter(p=>p.role==='helper');
+    const clients  = profiles.filter(p=>p.role==='client');
+    const vetted   = helpers.filter(h=>h.is_vetted===true);
+    const now = new Date();
+    const d7  = new Date(now - 7*864e5).toISOString();
+    const d30 = new Date(now - 30*864e5).toISOString();
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-  // Helper metrics
-  document.getElementById('helper-health-metrics').innerHTML =
-    gmCard('c-l','fa-hard-hat','210','New Helpers (7d)','12%','up') +
-    gmCard('c-a','fa-check-circle','78%','Acceptance Rate','2%','up') +
-    gmCard('c-t','fa-star','4.7','Avg. Rating','0.1','up');
+    const newClients7  = clients.filter(c=>c.created_at>=d7).length;
+    const newHelpers7  = helpers.filter(h=>h.created_at>=d7).length;
+    const openJobs     = jobs.filter(j=>j.status==='open').length;
+    const completedBkgs= bookings.filter(b=>b.status==='accepted').length;
+    const totalBkgs    = bookings.length;
+    const fulfillRate  = totalBkgs > 0 ? Math.round(completedBkgs/totalBkgs*100) : 0;
+    const helperUtil   = helpers.length > 0
+      ? Math.round(vetted.length/helpers.length*100) : 0;
 
+    // Repeat client rate: clients with 2+ bookings
+    const clientBkgCounts = {};
+    bookings.forEach(b=>{ clientBkgCounts[b.client_id]=(clientBkgCounts[b.client_id]||0)+1; });
+    const repeatClients = Object.values(clientBkgCounts).filter(c=>c>=2).length;
+    const repeatRate = clients.length > 0 ? Math.round(repeatClients/clients.length*100) : 0;
+
+    // Avg rating
+    const avgRating = reviews.length > 0
+      ? (reviews.reduce((s,r)=>s+(Number(r.rating)||0),0)/reviews.length).toFixed(1) : '—';
+
+    // Avg jobs per client
+    const avgJobsPerClient = clients.length > 0
+      ? (jobs.length/clients.length).toFixed(1) : '0';
+
+    // Health scores
+    const getHealthCls = pct => pct >= 80 ? 'excellent' : pct >= 60 ? 'good' : pct >= 40 ? 'warn' : 'crit';
+    document.getElementById('health-scores').innerHTML = [
+      {score: fulfillRate+'%',         lbl:'Job Fulfillment',     sub:'Bookings accepted / total',     cls:getHealthCls(fulfillRate)},
+      {score: helperUtil+'%',          lbl:'Helper Vetted Rate',  sub:'Verified / total helpers',      cls:getHealthCls(helperUtil)},
+      {score: repeatRate+'%',          lbl:'Client Retention',    sub:'Clients with 2+ bookings',      cls:getHealthCls(repeatRate)},
+      {score: avgRating+'★',           lbl:'Avg. Rating',         sub:'Platform-wide score',           cls: Number(avgRating)>=4.5?'excellent': Number(avgRating)>=4?'good':Number(avgRating)>=3?'warn':'crit'},
+      {score: fmtNum(openJobs),        lbl:'Open Jobs',           sub:'Jobs awaiting a helper',        cls: openJobs>0?'excellent':'warn'},
+      {score: fmtNum(vetted.length),   lbl:'Verified Helpers',    sub:'Ready to take jobs',            cls: vetted.length>0?'excellent':'warn'},
+    ].map(h=>`<div class="health-card ${h.cls}">
+      <div class="score-val">${h.score}</div>
+      <div class="score-lbl">${h.lbl}</div>
+      <div class="score-sub">${h.sub}</div>
+    </div>`).join('');
+
+    // Client metrics
+    document.getElementById('client-health-metrics').innerHTML =
+      gmCard('c-c','fa-user-plus',fmtNum(newClients7),'New Clients (7d)','','') +
+      gmCard('c-l','fa-redo',repeatRate+'%','Repeat Rate','','') +
+      gmCard('c-i','fa-briefcase',avgJobsPerClient,'Jobs per Client','','');
+
+    // Helper metrics
+    const helperAccRate = totalBkgs > 0 ? Math.round(completedBkgs/totalBkgs*100) : 0;
+    document.getElementById('helper-health-metrics').innerHTML =
+      gmCard('c-l','fa-hard-hat',fmtNum(newHelpers7),'New Helpers (7d)','','') +
+      gmCard('c-a','fa-check-circle',helperAccRate+'%','Acceptance Rate','','') +
+      gmCard('c-t','fa-star',avgRating,'Avg. Rating','','');
+  } catch(e) {
+    document.getElementById('health-scores').innerHTML = `<div style="color:var(--red);font-size:12px;grid-column:1/-1">Error: ${e.message}</div>`;
+  }
   renderHealthCharts();
 }
 
@@ -4148,6 +4381,21 @@ Answer growth and marketing questions concisely in 2-3 sentences. Be specific wi
   body.scrollTop = body.scrollHeight;
 }
 
+
+
+// ── LIVE FORMAT HELPERS ─────────────────────────────────────
+function fmtNum(n) {
+  n = Number(n)||0;
+  if(n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if(n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return n.toLocaleString();
+}
+function fmtK(n) {
+  n = Number(n)||0;
+  if(n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if(n >= 1e3) return (n/1e3).toFixed(0)+'K';
+  return n.toLocaleString();
+}
 </script>
 </body>
 </html>
