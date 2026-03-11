@@ -344,11 +344,22 @@ async function handlePostJob() {
   const description = document.getElementById('job-desc')?.value.trim();
   const budget      = document.getElementById('job-budget')?.value.trim();
   const category    = document.getElementById('job-category')?.value;
-  // B-01 fix: capture location so search filtering works correctly
-  const location    = document.getElementById('job-location')?.value.trim() || '';
+
+  // Build location from city dropdown + optional area text
+  const city = document.getElementById('job-city')?.value || '';
+  const area = document.getElementById('job-area')?.value.trim() || '';
+  const location = city ? (area ? `${area}, ${city}` : city) : '';
+
+  // Write combined value into hidden field (keeps B-01 fix intact)
+  const locHidden = document.getElementById('job-location');
+  if (locHidden) locHidden.value = location;
 
   if (!title || !description || !budget || !category) {
     alert("Please fill in all fields including category.");
+    return;
+  }
+  if (!city) {
+    alert("Please select a city for the job location.");
     return;
   }
   toggleLoader(true);
@@ -364,8 +375,12 @@ async function handlePostJob() {
     document.getElementById('job-desc').value     = "";
     document.getElementById('job-budget').value   = "";
     document.getElementById('job-category').value = "";
-    const locEl = document.getElementById('job-location');
-    if (locEl) locEl.value = "";
+    const cityEl = document.getElementById('job-city');
+    const areaEl = document.getElementById('job-area');
+    const locEl  = document.getElementById('job-location');
+    if (cityEl) cityEl.value = "";
+    if (areaEl) areaEl.value = "";
+    if (locEl)  locEl.value  = "";
     loadMarketplaceJobs?.();
   } catch (err) { alert(err.message); }
   finally { toggleLoader(false); }

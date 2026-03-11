@@ -88,6 +88,58 @@
   <option value="security">🔒 Security</option>
 </select>
 
+      <!-- Location ── city + specific area -->
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
+        <select id="job-city" style="flex:0 0 140px; margin-bottom:0;">
+          <option value="">📍 City</option>
+          <option value="Nairobi">Nairobi</option>
+          <option value="Mombasa">Mombasa</option>
+          <option value="Kisumu">Kisumu</option>
+          <option value="Nakuru">Nakuru</option>
+          <option value="Eldoret">Eldoret</option>
+          <option value="Thika">Thika</option>
+          <option value="Kiambu">Kiambu</option>
+          <option value="Machakos">Machakos</option>
+        </select>
+        <input type="text" id="job-area"
+          placeholder="Area / Estate e.g. Westlands"
+          style="flex:1; margin-bottom:0;"
+          list="area-suggestions" autocomplete="off" />
+        <datalist id="area-suggestions">
+          <option value="CBD">
+          <option value="Westlands">
+          <option value="Kilimani">
+          <option value="Lavington">
+          <option value="Karen">
+          <option value="Langata">
+          <option value="Eastlands">
+          <option value="Kasarani">
+          <option value="Embakasi">
+          <option value="Ngong Road">
+          <option value="South B">
+          <option value="South C">
+          <option value="Parklands">
+          <option value="Gigiri">
+          <option value="Runda">
+          <option value="Muthaiga">
+          <option value="Kileleshwa">
+          <option value="Hurlingham">
+          <option value="Upper Hill">
+          <option value="Industrial Area">
+          <option value="Rongai">
+          <option value="Ruaka">
+          <option value="Ruiru">
+          <option value="Juja">
+          <option value="Tudor">
+          <option value="Nyali">
+          <option value="Bamburi">
+          <option value="Milimani">
+        </datalist>
+      </div>
+
+      <!-- Hidden combined field read by handlePostJob() -->
+      <input type="hidden" id="job-location" />
+
       <button onclick="handlePostJob()" class="btn-primary full">
         Post Job
       </button>
