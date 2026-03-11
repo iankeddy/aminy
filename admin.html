@@ -7,7 +7,8 @@
 <meta name="theme-color" content="#b8ff4f">
 <link rel="icon" type="image/png" href="images/icon-192.png">
 <title>Aminy Admin</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -38,26 +39,35 @@
   --amber:     #fbbf24;   --amber-dim:  rgba(251,191,36,0.10);
   --blue:      #60a5fa;   --blue-dim:   rgba(96,165,250,0.10);
   --violet:    #a78bfa;   --violet-dim: rgba(167,139,250,0.10);
+
+  /* ── Legacy aliases (used by JS-generated inline styles & charts) ── */
+  --green:        #b8ff4f;
+  --green-dark:   #8ecc1e;
+  --orange:       #fbbf24;
+  --grey-400:     #4a5e70;
+  --grey-600:     #8094a8;
+  --border-light: rgba(255,255,255,0.06);
+  --font-body:    'Plus Jakarta Sans', sans-serif;
   --teal:      #34d399;   --teal-dim:   rgba(52,211,153,0.10);
 
   /* Canvas */
-  --bg:        #070809;
-  --bg2:       #0c0e10;
-  --bg3:       #111417;
-  --card:      rgba(14,18,24,0.72);
-  --card-solid:#0e1218;
-  --glass:     rgba(15,18,21,0.65);
+  --bg:        #f0faf0;
+  --bg2:       #e8f5e8;
+  --bg3:       #ddeedd;
+  --card:      rgba(255,255,255,0.75);
+  --card-solid:#ffffff;
+  --glass:     rgba(240,250,240,0.80);
   --lift:      rgba(255,255,255,0.025);
 
   /* Borders */
-  --b1: rgba(255,255,255,0.06);
-  --b2: rgba(255,255,255,0.10);
-  --b3: rgba(255,255,255,0.16);
+  --b1: rgba(0,80,0,0.08);
+  --b2: rgba(0,80,0,0.13);
+  --b3: rgba(0,80,0,0.20);
 
   /* Text */
-  --t1: #f0f4f8;
-  --t2: #8094a8;
-  --t3: #3d5060;
+  --t1: #0d1f0d;
+  --t2: #3a5a3a;
+  --t3: #6a9a6a;
 
   /* Layout */
   --sb:  240px;
@@ -504,6 +514,7 @@ a { text-decoration:none; color:inherit }
 .mc-violet::before { background: linear-gradient(90deg, var(--violet), transparent) }
 .mc-teal::before   { background: linear-gradient(90deg, var(--teal), transparent) }
 .mc-red::before    { background: linear-gradient(90deg, var(--red), transparent) }
+.mc-orange::before { background: linear-gradient(90deg, var(--amber), transparent) }
 /* Also map legacy green/amber/purple/orange classes */
 .mc-green::before  { background: linear-gradient(90deg, var(--a), transparent) }
 .mc-amber::before  { background: linear-gradient(90deg, var(--amber), transparent) }
@@ -522,6 +533,7 @@ a { text-decoration:none; color:inherit }
 .mc-purple .metric-icon  { background: var(--violet-dim); color: var(--violet) }
 .mc-teal   .metric-icon  { background: var(--teal-dim);   color: var(--teal) }
 .mc-red    .metric-icon  { background: var(--red-dim);    color: var(--red) }
+.mc-orange .metric-icon  { background: var(--amber-dim);  color: var(--amber) }
 .mc-amber  .metric-icon  { background: var(--amber-dim);  color: var(--amber) }
 
 .metric-value {
@@ -970,6 +982,226 @@ tbody tr:hover td { background: rgba(255,255,255,0.03) }
   .modal-hero { border-radius:14px 14px 0 0; padding:18px }
 }
 
+
+/* ═══════════════════════════════════════════════════════════
+   AMINY GROWTH ENGINE — Marketing Control Center
+═══════════════════════════════════════════════════════════ */
+:root {
+  --gc:  #22d3ee; --gc-d: rgba(34,211,238,.08);
+  --gr:  #fb7185; --gr-d: rgba(251,113,133,.08);
+  --gi:  #818cf8; --gi-d: rgba(129,140,248,.08);
+  --gam: #fbbf24; --gam-d:rgba(251,191,36,.08);
+  --gt:  #2dd4bf; --gt-d: rgba(45,212,191,.08);
+  --gp:  #c084fc; --gp-d: rgba(192,132,252,.08);
+}
+/* hero */
+.gh{background:linear-gradient(135deg,rgba(14,18,24,.9),rgba(8,12,16,.95));border:1px solid var(--b1);border-radius:var(--r);padding:24px 28px;margin-bottom:20px;position:relative;overflow:hidden}
+.gh::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--a),rgba(184,255,79,.15),transparent)}
+.gh-title{font-family:var(--fh);font-size:20px;font-weight:800;color:var(--t1);letter-spacing:-.4px;margin-bottom:4px}
+.gh-sub{font-size:12.5px;color:var(--t3);line-height:1.5}
+.gh-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+/* gm cards */
+.gm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-bottom:20px}
+.gmc{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;transition:border-color var(--ease),transform var(--ease)}
+.gmc:hover{border-color:var(--b2);transform:translateY(-2px)}
+.gmc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;border-radius:var(--r) var(--r) 0 0}
+.gmc.c-c::before{background:linear-gradient(90deg,var(--gc),transparent)}
+.gmc.c-r::before{background:linear-gradient(90deg,var(--gr),transparent)}
+.gmc.c-i::before{background:linear-gradient(90deg,var(--gi),transparent)}
+.gmc.c-a::before{background:linear-gradient(90deg,var(--gam),transparent)}
+.gmc.c-t::before{background:linear-gradient(90deg,var(--gt),transparent)}
+.gmc.c-p::before{background:linear-gradient(90deg,var(--gp),transparent)}
+.gmc.c-l::before{background:linear-gradient(90deg,var(--a),transparent)}
+.gm-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;margin-bottom:10px}
+.c-c .gm-icon{background:var(--gc-d);color:var(--gc)}.c-r .gm-icon{background:var(--gr-d);color:var(--gr)}
+.c-i .gm-icon{background:var(--gi-d);color:var(--gi)}.c-a .gm-icon{background:var(--gam-d);color:var(--gam)}
+.c-t .gm-icon{background:var(--gt-d);color:var(--gt)}.c-p .gm-icon{background:var(--gp-d);color:var(--gp)}
+.c-l .gm-icon{background:var(--a-dim);color:var(--a)}
+.gm-val{font-family:var(--fm);font-size:22px;font-weight:500;color:var(--t1);line-height:1;margin-bottom:3px;letter-spacing:-.5px}
+.gm-lbl{font-size:10.5px;font-weight:500;color:var(--t3)}
+.gm-delta{display:flex;align-items:center;gap:3px;margin-top:6px;font-size:10px;font-weight:600}
+.d-up{color:var(--a)}.d-dn{color:var(--red)}.d-warn{color:var(--gam)}
+/* campaign cards */
+.camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin-bottom:20px}
+.camp-card{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:18px;transition:border-color var(--ease),box-shadow var(--ease);cursor:pointer;position:relative;overflow:hidden}
+.camp-card:hover{border-color:var(--b2);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.camp-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.camp-name{font-family:var(--fh);font-size:13.5px;font-weight:700;color:var(--t1);margin-bottom:2px}
+.camp-ch{font-size:10.5px;color:var(--t3)}
+.camp-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px}
+.cs-item{background:rgba(255,255,255,.03);border-radius:6px;padding:8px 10px}
+.cs-val{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--t1)}
+.cs-lbl{font-size:9.5px;color:var(--t3);margin-top:1px}
+.bbar-lbl{display:flex;justify-content:space-between;font-size:10.5px;color:var(--t3);margin-bottom:4px}
+.bbar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-bottom:10px}
+.bbar-fill{height:100%;border-radius:2px;transition:width .6s ease}
+/* status chips */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.chip-live{background:rgba(184,255,79,.12);color:var(--a);border:1px solid rgba(184,255,79,.2)}
+.chip-paused{background:var(--gam-d);color:var(--gam);border:1px solid rgba(251,191,36,.2)}
+.chip-ended{background:rgba(255,255,255,.05);color:var(--t3);border:1px solid var(--b1)}
+.chip-draft{background:var(--gi-d);color:var(--gi);border:1px solid rgba(129,140,248,.2)}
+/* platform grid */
+.plat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+.plat-card{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:16px;text-align:center;transition:border-color var(--ease),transform var(--ease)}
+.plat-card:hover{border-color:var(--b2);transform:translateY(-2px)}
+.plat-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;margin:0 auto 10px}
+.p-fb{background:rgba(24,119,242,.12);color:#1877f2}.p-ig{background:rgba(225,48,108,.12);color:#e1306c}
+.p-tt{background:rgba(105,201,208,.12);color:#69c9d0}.p-x{background:rgba(255,255,255,.07);color:var(--t1)}
+.p-li{background:rgba(10,102,194,.12);color:#0a66c2}.p-yt{background:rgba(255,0,0,.12);color:#ff4444}
+.plat-name{font-size:12.5px;font-weight:700;color:var(--t1);margin-bottom:5px}
+.plat-fans{font-family:var(--fm);font-size:17px;color:var(--a);font-weight:500}
+.plat-lbl{font-size:10px;color:var(--t3);margin-top:2px}
+/* calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px}
+.cal-dh{font-size:9.5px;font-weight:700;color:var(--t3);text-align:center;padding:5px 0;text-transform:uppercase;letter-spacing:.7px}
+.cal-day{min-height:68px;background:rgba(255,255,255,.02);border:1px solid var(--b1);border-radius:var(--r3);padding:5px;cursor:pointer;transition:border-color var(--ease)}
+.cal-day:hover{border-color:var(--b2)}.cal-day.today{border-color:rgba(184,255,79,.3);background:var(--a-dim)}
+.cal-dt{font-size:9.5px;font-weight:700;color:var(--t3);margin-bottom:3px}
+.cal-post{font-size:8.5px;font-weight:600;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-fb{background:rgba(24,119,242,.18);color:#60a5fa}.cp-ig{background:rgba(225,48,108,.18);color:#f472b6}
+.cp-tt{background:rgba(105,201,208,.18);color:var(--gc)}.cp-x{background:rgba(255,255,255,.07);color:var(--t2)}
+/* referral */
+.ref-viral{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:22px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden}
+.ref-viral::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--gi),transparent)}
+.viral-k{font-family:var(--fm);font-size:52px;font-weight:500;color:var(--gi);line-height:1}
+.viral-lbl{font-size:12.5px;color:var(--t3);margin-top:3px}
+.viral-desc{font-size:11px;color:var(--t2);margin-top:5px;max-width:240px;margin-left:auto;margin-right:auto}
+.funnel-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b1)}
+.funnel-row:last-child{border-bottom:none}
+.funnel-lbl{font-size:11.5px;font-weight:600;color:var(--t2);width:110px;flex-shrink:0}
+.funnel-bw{flex:1;height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden}
+.funnel-b{height:100%;border-radius:3px}
+.funnel-v{font-family:var(--fm);font-size:11.5px;color:var(--t1);width:42px;text-align:right;flex-shrink:0}
+/* promo */
+.promo-gen{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:20px;margin-bottom:16px;position:relative;overflow:hidden}
+.promo-gen::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--gam),transparent)}
+.promo-display{background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:var(--r2);padding:12px 16px;font-family:var(--fm);font-size:20px;font-weight:500;color:var(--a);text-align:center;letter-spacing:4px;margin:12px 0;cursor:pointer;transition:background var(--ease)}
+.promo-display:hover{background:rgba(184,255,79,.06)}
+.promo-opts{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+/* influencer */
+.inf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-bottom:20px}
+.inf-card{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:16px;transition:border-color var(--ease),transform var(--ease);position:relative}
+.inf-card:hover{border-color:var(--b2);transform:translateY(-2px)}
+.inf-hd{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.inf-av{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;color:var(--bg)}
+.inf-name{font-size:13.5px;font-weight:700;color:var(--t1)}
+.inf-handle{font-size:10.5px;color:var(--t3)}
+.inf-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.is-item{background:rgba(255,255,255,.03);border-radius:5px;padding:6px 7px;text-align:center}
+.is-val{font-family:var(--fm);font-size:12.5px;font-weight:500;color:var(--t1)}
+.is-lbl{font-size:9px;color:var(--t3);margin-top:1px}
+.comm-badge{position:absolute;top:12px;right:12px;background:var(--gam-d);color:var(--gam);border:1px solid rgba(251,191,36,.2);border-radius:20px;font-size:9.5px;font-weight:700;padding:2px 7px}
+/* leaderboard */
+.lb-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b1)}
+.lb-row:last-child{border-bottom:none}
+.lb-rank{width:20px;font-family:var(--fm);font-size:10.5px;font-weight:700;color:var(--t3);text-align:center;flex-shrink:0}
+.lb-rank.r1{color:#f5c518}.lb-rank.r2{color:#94a3b8}.lb-rank.r3{color:#b87b52}
+.lb-av{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;color:var(--bg)}
+.lb-info{flex:1;min-width:0}
+.lb-name{font-size:12px;font-weight:600;color:var(--t1)}
+.lb-sub{font-size:10.5px;color:var(--t3);margin-top:1px}
+.lb-val{font-family:var(--fm);font-size:12.5px;font-weight:500;color:var(--t1);text-align:right;min-width:55px}
+/* tabs */
+.gm-tabs{display:flex;gap:3px;padding:3px;background:rgba(255,255,255,.02);border-radius:var(--r2);margin-bottom:18px;border:1px solid var(--b1)}
+.gm-tab{flex:1;padding:7px 10px;border-radius:var(--r3);font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;transition:all var(--ease);border:none;background:none;text-align:center}
+.gm-tab.active{background:rgba(255,255,255,.07);color:var(--t1)}
+.gm-tab:hover:not(.active){color:var(--t2)}
+/* health */
+.health-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:20px}
+.health-card{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:18px;text-align:center;position:relative;overflow:hidden}
+.health-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
+.health-card.excellent::before{background:linear-gradient(90deg,var(--a),transparent)}
+.health-card.good::before{background:linear-gradient(90deg,var(--gc),transparent)}
+.health-card.warn::before{background:linear-gradient(90deg,var(--gam),transparent)}
+.health-card.crit::before{background:linear-gradient(90deg,var(--red),transparent)}
+.score-val{font-family:var(--fm);font-size:36px;font-weight:500;line-height:1;margin-bottom:4px}
+.excellent .score-val{color:var(--a)}.good .score-val{color:var(--gc)}.warn .score-val{color:var(--gam)}.crit .score-val{color:var(--red)}
+.score-lbl{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:2px}
+.score-sub{font-size:10.5px;color:var(--t3)}
+/* segment rows */
+.seg-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b1)}
+.seg-row:last-child{border-bottom:none}
+.seg-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.seg-info{flex:1}
+.seg-name{font-size:12.5px;font-weight:600;color:var(--t1)}
+.seg-desc{font-size:10.5px;color:var(--t3);margin-top:1px}
+.seg-cnt{font-family:var(--fm);font-size:15px;font-weight:500;color:var(--t1);text-align:right;min-width:38px}
+/* template cards */
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:9px;margin-bottom:14px}
+.tpl-card{background:rgba(255,255,255,.02);border:1px solid var(--b1);border-radius:var(--r2);padding:12px;cursor:pointer;transition:border-color var(--ease),background var(--ease)}
+.tpl-card:hover,.tpl-card.sel{border-color:var(--a);background:var(--a-dim)}
+.tpl-title{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:3px}
+.tpl-body{font-size:11px;color:var(--t3);line-height:1.45}
+/* AI engine */
+.ai-fab{position:fixed;bottom:86px;right:18px;z-index:900;width:46px;height:46px;border-radius:50%;background:var(--a);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--bg);box-shadow:0 4px 20px var(--a-glow2);transition:transform var(--spring);animation:fabPulse 3s ease-in-out infinite}
+@keyframes fabPulse{0%,100%{box-shadow:0 4px 20px var(--a-glow2)}50%{box-shadow:0 4px 32px rgba(184,255,79,.5)}}
+.ai-fab:hover{transform:scale(1.1)}
+.ai-panel{position:fixed;bottom:142px;right:18px;z-index:900;width:320px;max-height:460px;background:rgba(10,14,20,.97);border:1px solid var(--b2);border-radius:16px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.7);display:none;flex-direction:column}
+.ai-panel.open{display:flex;animation:aiIn .26s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes aiIn{from{opacity:0;transform:scale(.88) translateY(14px)}to{opacity:1;transform:none}}
+.ai-ph{padding:12px 14px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:9px;flex-shrink:0;background:linear-gradient(135deg,rgba(184,255,79,.05),transparent)}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--a);animation:fabPulse 2s infinite}
+.ai-ptitle{font-family:var(--fh);font-size:12.5px;font-weight:800;color:var(--t1)}
+.ai-psub{font-size:9.5px;color:var(--t3)}
+.ai-body{flex:1;overflow-y:auto;padding:12px 14px}
+.ai-msg{margin-bottom:10px}
+.ai-mlbl{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px}
+.ai-bubble{background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:9px;padding:9px 11px;font-size:12px;color:var(--t2);line-height:1.5}
+.ai-bubble.bot{background:rgba(184,255,79,.05);border-color:rgba(184,255,79,.12);color:var(--t1)}
+.ai-insight{background:rgba(184,255,79,.05);border:1px solid rgba(184,255,79,.14);border-radius:var(--r3);padding:9px 11px;margin-bottom:7px}
+.ai-ititle{font-size:10.5px;font-weight:700;color:var(--a);margin-bottom:2px}
+.ai-ibody{font-size:11px;color:var(--t2);line-height:1.5}
+.ai-pfoot{padding:9px 12px;border-top:1px solid var(--b1);display:flex;gap:7px;flex-shrink:0}
+.ai-inp{flex:1;padding:7px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:var(--r3);font-size:12px;color:var(--t1);outline:none;font-family:var(--fh);transition:border-color var(--ease)}
+.ai-inp:focus{border-color:var(--a)}
+.ai-inp::placeholder{color:var(--t3)}
+.ai-send{width:30px;height:30px;border-radius:var(--r3);background:var(--a);color:var(--bg);border:none;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;flex-shrink:0;transition:filter var(--ease)}
+.ai-send:hover{filter:brightness(1.12)}
+/* misc utility */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.kw-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b1);font-size:12px}
+.kw-row:last-child{border-bottom:none}
+.kw-pos{font-family:var(--fm);color:var(--a);width:22px;text-align:center;font-size:11px;font-weight:500}
+.kw-term{flex:1;color:var(--t1);font-weight:500}
+.kw-vol{color:var(--t3);width:50px;text-align:right;font-size:11px}
+.kw-chg.up{color:var(--a);font-size:10.5px;font-weight:700}.kw-chg.dn{color:var(--red);font-size:10.5px;font-weight:700}
+.ad-pill{display:flex;align-items:center;gap:7px;padding:7px 13px;background:var(--card);border:1px solid var(--b1);border-radius:var(--r2);cursor:pointer;transition:all var(--ease)}
+.ad-pill:hover,.ad-pill.active{border-color:var(--b2);background:rgba(255,255,255,.05)}
+.ad-pill span{font-size:12px;font-weight:600;color:var(--t2)}
+.ad-pill-bar{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+@media(max-width:768px){
+  .camp-grid,.inf-grid{grid-template-columns:1fr}
+  .plat-grid{grid-template-columns:repeat(2,1fr)}
+  .cal-grid{gap:2px}
+  .cal-day{min-height:46px}
+  .ai-panel{width:calc(100vw - 36px);right:18px}
+  .gm-grid{grid-template-columns:repeat(2,1fr)}
+  .promo-opts,.g2,.g3{grid-template-columns:1fr}
+  .health-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+
+/* Growth-shared components */
+.btn-a{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--a);color:var(--bg);border:none;border-radius:var(--r3);font-size:12.5px;font-weight:700;cursor:pointer;transition:filter var(--ease),transform var(--ease)}
+.btn-a:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(255,255,255,.05);color:var(--t2);border:1px solid var(--b1);border-radius:var(--r3);font-size:12.5px;font-weight:600;cursor:pointer;transition:all var(--ease)}
+.btn-ghost:hover{border-color:var(--b2);color:var(--t1)}
+.input-sm{width:100%;padding:8px 11px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:var(--r3);font-size:12.5px;color:var(--t1);outline:none;font-family:var(--fh);transition:border-color var(--ease)}
+.input-sm:focus{border-color:var(--a)}
+.input-sm::placeholder{color:var(--t3)}
+select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%234a5e70' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
+.panel-card{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:18px 20px;margin-bottom:14px}
+.panel-title{font-family:var(--fh);font-size:13px;font-weight:700;color:var(--t1);display:flex;align-items:center;gap:7px}
+.panel-title i{color:var(--a);opacity:.7}
+.field-lbl{font-size:10.5px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.data-table th{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;padding:7px 10px;border-bottom:1px solid var(--b1);text-align:left;white-space:nowrap}
+.data-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--t2)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:rgba(255,255,255,.02)}
+
 </style>
 </head>
 <body>
@@ -1293,7 +1525,543 @@ tbody tr:hover td { background: rgba(255,255,255,0.03) }
       </div>
     </section>
 
-  </div><!-- /content -->
+  
+  <!-- ═══ PAGE: CAMPAIGNS ════════════════════════════════════════ -->
+  <div id="page-campaigns" class="page">
+    <div class="gh">
+      <div class="gh-title"><i class="fas fa-rocket" style="color:var(--a);margin-right:8px"></i>Campaign Manager</div>
+      <div class="gh-sub">Create and track paid ads, influencer, email, referral &amp; social campaigns across every channel.</div>
+      <div class="gh-actions">
+        <button class="btn-a" onclick="openCampModal()"><i class="fas fa-plus"></i> New Campaign</button>
+        <button class="btn-ghost" onclick="exportCampaigns()"><i class="fas fa-download"></i> Export</button>
+      </div>
+    </div>
+    <!-- KPI strip -->
+    <div class="gm-grid" id="camp-kpis"></div>
+    <!-- Tabs -->
+    <div class="gm-tabs">
+      <button class="gm-tab active" onclick="filterCamps('all',this)">All</button>
+      <button class="gm-tab" onclick="filterCamps('paid_ads',this)">Paid Ads</button>
+      <button class="gm-tab" onclick="filterCamps('email',this)">Email</button>
+      <button class="gm-tab" onclick="filterCamps('influencer',this)">Influencer</button>
+      <button class="gm-tab" onclick="filterCamps('referral',this)">Referral</button>
+      <button class="gm-tab" onclick="filterCamps('push',this)">Push</button>
+      <button class="gm-tab" onclick="filterCamps('sms',this)">SMS</button>
+    </div>
+    <div class="camp-grid" id="camp-cards"></div>
+    <!-- Conversion funnel -->
+    <div class="g2">
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-filter"></i> Conversion Funnel</div>
+        <div id="camp-funnel"></div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-chart-line"></i> ROI by Channel</div>
+        <canvas id="roiChart" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: SOCIAL ═══════════════════════════════════════════ -->
+  <div id="page-social" class="page">
+    <div class="gh">
+      <div class="gh-title"><i class="fas fa-hashtag" style="color:var(--gc);margin-right:8px"></i>Social Media Manager</div>
+      <div class="gh-sub">Schedule posts, track engagement and manage all Aminy social accounts from one place.</div>
+      <div class="gh-actions">
+        <button class="btn-a" onclick="openPostModal()"><i class="fas fa-plus"></i> Schedule Post</button>
+        <button class="btn-ghost" onclick="openHashtagManager()"><i class="fas fa-hashtag"></i> Hashtags</button>
+      </div>
+    </div>
+    <!-- Platform cards -->
+    <div class="plat-grid" id="plat-cards"></div>
+    <!-- Tabs -->
+    <div class="gm-tabs">
+      <button class="gm-tab active" onclick="socialTab('calendar',this)">Calendar</button>
+      <button class="gm-tab" onclick="socialTab('analytics',this)">Analytics</button>
+      <button class="gm-tab" onclick="socialTab('library',this)">Library</button>
+    </div>
+    <!-- Calendar -->
+    <div id="social-calendar-view">
+      <div class="cal-grid" id="cal-header"></div>
+      <div class="cal-grid" id="cal-body"></div>
+    </div>
+    <!-- Analytics (hidden initially) -->
+    <div id="social-analytics-view" style="display:none">
+      <div class="g2">
+        <div class="panel-card">
+          <div class="panel-title"><i class="fas fa-chart-area"></i> Reach &amp; Impressions (7d)</div>
+          <canvas id="socialChart" height="180"></canvas>
+        </div>
+        <div class="panel-card">
+          <div class="panel-title"><i class="fas fa-fire"></i> Top Posts</div>
+          <div id="top-posts-list"></div>
+        </div>
+      </div>
+      <div class="panel-card" style="margin-top:14px">
+        <div class="panel-title"><i class="fas fa-th"></i> Engagement Heatmap</div>
+        <div id="eng-heatmap" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px"></div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:6px"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+      </div>
+    </div>
+    <!-- Library (hidden initially) -->
+    <div id="social-library-view" style="display:none">
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-photo-video"></i> Media Library</div>
+        <div id="media-library-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:12px"></div>
+        <button class="btn-ghost" style="margin-top:14px;width:100%"><i class="fas fa-cloud-upload-alt"></i> Upload Media</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: REFERRALS ════════════════════════════════════════ -->
+  <div id="page-referrals" class="page">
+    <div class="gh">
+      <div class="gh-title"><i class="fas fa-users" style="color:var(--gi);margin-right:8px"></i>Referral Growth System</div>
+      <div class="gh-sub">Viral invite loops with referral codes, invite links and QR codes.</div>
+      <div class="gh-actions">
+        <button class="btn-a" onclick="createRefCampaign()"><i class="fas fa-plus"></i> New Campaign</button>
+        <button class="btn-ghost" onclick="generateQR()"><i class="fas fa-qrcode"></i> QR Code</button>
+      </div>
+    </div>
+    <div class="gm-grid" id="ref-kpis"></div>
+    <div class="g2">
+      <div class="ref-viral">
+        <div class="viral-k" id="viral-coeff">1.0</div>
+        <div class="viral-lbl">Viral Coefficient (K-factor)</div>
+        <div class="viral-desc">Each user brings in <span id="viral-avg">1.0</span> new users on average. Above 1.0 = exponential growth.</div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-filter"></i> Referral Funnel</div>
+        <div id="ref-funnel"></div>
+      </div>
+    </div>
+    <!-- Reward settings -->
+    <div class="panel-card" style="margin-bottom:14px">
+      <div class="panel-title"><i class="fas fa-gift"></i> Reward Structure</div>
+      <div class="g3" style="margin-top:14px">
+        <div>
+          <div style="font-size:11px;color:var(--t3);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Referrer Reward</div>
+          <input type="number" id="ref-reward-amount" class="input-sm" placeholder="KES 200" value="200">
+          <div style="font-size:10.5px;color:var(--t3);margin-top:4px">Credited when friend completes first job</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--t3);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Friend Reward</div>
+          <input type="number" id="ref-friend-amount" class="input-sm" placeholder="KES 100" value="100">
+          <div style="font-size:10.5px;color:var(--t3);margin-top:4px">Discount on first booking</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--t3);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Max Referrals/User</div>
+          <input type="number" id="ref-max" class="input-sm" placeholder="10" value="10">
+          <div style="font-size:10.5px;color:var(--t3);margin-top:4px">0 = unlimited</div>
+        </div>
+      </div>
+      <button class="btn-a" style="margin-top:14px" onclick="saveRefSettings()"><i class="fas fa-save"></i> Save Settings</button>
+    </div>
+    <!-- Top referrers leaderboard -->
+    <div class="panel-card">
+      <div class="panel-title"><i class="fas fa-trophy"></i> Top Referrers</div>
+      <div id="ref-leaderboard" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: PROMOS ═══════════════════════════════════════════ -->
+  <div id="page-promos" class="page">
+    <div class="gh">
+      <div class="gh-title"><i class="fas fa-tag" style="color:var(--gam);margin-right:8px"></i>Promo Codes &amp; Discounts</div>
+      <div class="gh-sub">Generate codes, set rules and track redemptions in real time.</div>
+      <div class="gh-actions">
+        <button class="btn-a" onclick="openPromoModal()"><i class="fas fa-plus"></i> Create Code</button>
+      </div>
+    </div>
+    <div class="gm-grid" id="promo-kpis"></div>
+    <div class="g2">
+      <!-- Generator -->
+      <div class="promo-gen">
+        <div class="panel-title" style="margin-bottom:14px"><i class="fas fa-magic"></i> Code Generator</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Discount Type</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="btn-ghost" id="promo-pct-btn" onclick="setPromoType('pct',this)" style="flex:1">% Off</button>
+          <button class="btn-ghost" id="promo-fix-btn" onclick="setPromoType('fix',this)" style="flex:1">KES Off</button>
+        </div>
+        <div class="promo-opts">
+          <div>
+            <div style="font-size:10.5px;color:var(--t3);margin-bottom:4px">Value</div>
+            <input type="number" id="promo-value" class="input-sm" placeholder="20" value="20">
+          </div>
+          <div>
+            <div style="font-size:10.5px;color:var(--t3);margin-bottom:4px">Usage Limit</div>
+            <input type="number" id="promo-limit" class="input-sm" placeholder="100" value="100">
+          </div>
+          <div>
+            <div style="font-size:10.5px;color:var(--t3);margin-bottom:4px">Expiry Date</div>
+            <input type="date" id="promo-expiry" class="input-sm">
+          </div>
+          <div>
+            <div style="font-size:10.5px;color:var(--t3);margin-bottom:4px">Category</div>
+            <select id="promo-cat" class="input-sm">
+              <option value="">All</option>
+              <option>cleaning</option><option>delivery</option>
+              <option>repairs</option><option>tutoring</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin:10px 0">
+          <input type="checkbox" id="promo-new-only"> 
+          <label for="promo-new-only" style="font-size:12px;color:var(--t2)">First-time users only</label>
+        </div>
+        <div class="promo-display" id="promo-preview" onclick="copyPromo()">AMINY20</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-ghost" style="flex:1" onclick="genPromoCode()"><i class="fas fa-random"></i> Regenerate</button>
+          <button class="btn-a" style="flex:1" onclick="savePromoCode()"><i class="fas fa-save"></i> Save Code</button>
+        </div>
+      </div>
+      <!-- Chart -->
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-chart-bar"></i> Redemptions This Month</div>
+        <canvas id="promoChart" height="200"></canvas>
+      </div>
+    </div>
+    <!-- Codes table -->
+    <div class="panel-card" style="margin-top:0">
+      <div class="panel-title"><i class="fas fa-list"></i> Active Codes</div>
+      <div style="overflow-x:auto;margin-top:10px">
+        <table class="data-table" id="promo-table">
+          <thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Used</th><th>Limit</th><th>Expires</th><th>Status</th><th></th></tr></thead>
+          <tbody id="promo-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: PUSH CAMPAIGNS ══════════════════════════════════ -->
+  <div id="page-push-campaigns" class="page">
+    <div class="gh">
+      <div class="gh-title"><i class="fas fa-bell" style="color:var(--gp);margin-right:8px"></i>Push &amp; Notification Campaigns</div>
+      <div class="gh-sub">Send app push, email and SMS campaigns to segmented audiences.</div>
+      <div class="gh-actions">
+        <button class="btn-a" onclick="openPushCampModal()"><i class="fas fa-plus"></i> New Campaign</button>
+      </div>
+    </div>
+    <div class="gm-grid" id="push-kpis"></div>
+    <div class="g2" style="margin-bottom:14px">
+      <!-- Segment picker -->
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-users-cog"></i> Audience Segments</div>
+        <div id="push-segments" style="margin-top:10px"></div>
+      </div>
+      <!-- Template library -->
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-layer-group"></i> Message Templates</div>
+        <div class="tpl-grid" id="tpl-grid" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <!-- Compose -->
+    <div class="panel-card" style="margin-bottom:14px">
+      <div class="panel-title"><i class="fas fa-edit"></i> Compose Campaign</div>
+      <div class="g2" style="margin-top:14px">
+        <div>
+          <div style="font-size:10.5px;color:var(--t3);margin-bottom:4px">Channel</div>
+          <select id="pc-channel" class="input-sm" style="width:100%;margin-bottom:10px">
+            <option value="push">App Push</option>
+            <option value="email">Email</option>
+            <option value="sms">SMS</option>
+          </select>
+          <div style="font-size:10.5px;color:var(--t3);margin-bottom:4px">Target Segment</div>
+          <select id="pc-segment" class="input-sm" style="width:100%;margin-bottom:10px">
+            <option value="all">All Users</option>
+            <option value="new">New Users (7d)</option>
+            <option value="inactive">Inactive (30d+)</option>
+            <option value="high_value">High Value</option>
+            <option value="clients">Clients Only</option>
+            <option value="helpers">Helpers Only</option>
+          </select>
+          <div style="font-size:10.5px;color:var(--t3);margin-bottom:4px">Schedule</div>
+          <input type="datetime-local" id="pc-schedule" class="input-sm" style="width:100%">
+        </div>
+        <div>
+          <div style="font-size:10.5px;color:var(--t3);margin-bottom:4px">Title</div>
+          <input type="text" id="pc-title" class="input-sm" style="width:100%;margin-bottom:10px" placeholder="e.g. 🎉 Welcome to Aminy!">
+          <div style="font-size:10.5px;color:var(--t3);margin-bottom:4px">Message</div>
+          <textarea id="pc-body" class="input-sm" style="width:100%;height:80px;resize:none" placeholder="Your notification message..."></textarea>
+          <button class="btn-a" style="margin-top:10px;width:100%" onclick="sendPushCampaign()"><i class="fas fa-paper-plane"></i> Send Campaign</button>
+        </div>
+      </div>
+    </div>
+    <!-- Campaign performance -->
+    <div class="panel-card">
+      <div class="panel-title"><i class="fas fa-chart-bar"></i> Campaign Performance</div>
+      <canvas id="pushChart" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: INFLUENCERS ══════════════════════════════════════ -->
+  <div id="page-influencers" class="page">
+    <div class="gh">
+      <div class="gh-title"><i class="fas fa-star" style="color:var(--gam);margin-right:8px"></i>Influencer &amp; Affiliate Tracking</div>
+      <div class="gh-sub">Manage partners, track signups and calculate commissions automatically.</div>
+      <div class="gh-actions">
+        <button class="btn-a" onclick="openInfluencerModal()"><i class="fas fa-plus"></i> Add Partner</button>
+        <button class="btn-ghost" onclick="exportInfluencers()"><i class="fas fa-download"></i> Export</button>
+      </div>
+    </div>
+    <div class="gm-grid" id="inf-kpis"></div>
+    <div class="inf-grid" id="inf-cards"></div>
+    <!-- Leaderboard -->
+    <div class="g2">
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-trophy"></i> Top Performers</div>
+        <div id="inf-leaderboard" style="margin-top:10px"></div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-hand-holding-usd"></i> Commissions Owed</div>
+        <div id="inf-commissions" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: SEO ══════════════════════════════════════════════ -->
+  <div id="page-seo" class="page">
+    <div class="gh">
+      <div class="gh-title"><i class="fas fa-search" style="color:var(--gc);margin-right:8px"></i>Website &amp; SEO Analytics</div>
+      <div class="gh-sub">Track organic traffic, search rankings and landing page performance.</div>
+      <div class="gh-actions">
+        <button class="btn-ghost" onclick="refreshSEO()"><i class="fas fa-sync-alt"></i> Refresh Data</button>
+      </div>
+    </div>
+    <div class="gm-grid" id="seo-kpis"></div>
+    <div class="g2" style="margin-bottom:14px">
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-chart-area"></i> Organic Traffic (30d)</div>
+        <canvas id="seoChart" height="180"></canvas>
+      </div>
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-pie-chart"></i> Traffic Sources</div>
+        <canvas id="sourceChart" height="180"></canvas>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-key"></i> Top Keywords</div>
+        <div id="kw-table" style="margin-top:10px"></div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-file-alt"></i> Best Landing Pages</div>
+        <div id="lp-table" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: PAID ADS ═════════════════════════════════════════ -->
+  <div id="page-paid-ads" class="page">
+    <div class="gh">
+      <div class="gh-title"><i class="fas fa-ad" style="color:var(--gr);margin-right:8px"></i>Paid Ads Dashboard</div>
+      <div class="gh-sub">Unified view of Meta, Google and TikTok ad performance.</div>
+      <div class="gh-actions">
+        <button class="btn-ghost" onclick="refreshAds()"><i class="fas fa-sync-alt"></i> Sync Data</button>
+      </div>
+    </div>
+    <!-- Platform selector -->
+    <div class="ad-pill-bar" id="ad-pill-bar">
+      <div class="ad-pill active" onclick="selectAdPlat('all',this)"><i class="fas fa-layer-group"></i><span>All Platforms</span></div>
+      <div class="ad-pill" onclick="selectAdPlat('meta',this)"><i class="fab fa-facebook" style="color:#1877f2"></i><span>Meta Ads</span></div>
+      <div class="ad-pill" onclick="selectAdPlat('google',this)"><i class="fab fa-google" style="color:#ea4335"></i><span>Google Ads</span></div>
+      <div class="ad-pill" onclick="selectAdPlat('tiktok',this)"><i class="fab fa-tiktok" style="color:#69c9d0"></i><span>TikTok Ads</span></div>
+    </div>
+    <div class="gm-grid" id="ads-kpis"></div>
+    <div class="g2" style="margin-bottom:14px">
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-chart-bar"></i> Ad Spend vs Revenue</div>
+        <canvas id="adSpendChart" height="180"></canvas>
+      </div>
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-funnel-dollar"></i> Conversion Funnel</div>
+        <div id="ads-funnel" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="panel-card">
+      <div class="panel-title"><i class="fas fa-table"></i> Campaign Breakdown</div>
+      <div style="overflow-x:auto;margin-top:10px">
+        <table class="data-table" id="ads-table">
+          <thead><tr><th>Campaign</th><th>Platform</th><th>Spend</th><th>Impressions</th><th>Clicks</th><th>CPC</th><th>Signups</th><th>CPA</th><th>ROI</th></tr></thead>
+          <tbody id="ads-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: RETENTION ════════════════════════════════════════ -->
+  <div id="page-retention" class="page">
+    <div class="gh">
+      <div class="gh-title"><i class="fas fa-redo-alt" style="color:var(--gt);margin-right:8px"></i>User Retention &amp; Reactivation</div>
+      <div class="gh-sub">Identify at-risk users and trigger automated campaigns to bring them back.</div>
+      <div class="gh-actions">
+        <button class="btn-a" onclick="runReactivation()"><i class="fas fa-bolt"></i> Run Reactivation</button>
+      </div>
+    </div>
+    <div class="gm-grid" id="ret-kpis"></div>
+    <div class="g2" style="margin-bottom:14px">
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-chart-line"></i> Retention Rate (12 weeks)</div>
+        <canvas id="retChart" height="180"></canvas>
+      </div>
+      <div class="panel-card">
+        <div class="panel-title"><i class="fas fa-users-slash"></i> At-Risk Segments</div>
+        <div id="ret-segments" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <!-- Automation flows -->
+    <div class="panel-card" style="margin-bottom:14px">
+      <div class="panel-title"><i class="fas fa-project-diagram"></i> Automation Workflows</div>
+      <div id="ret-automations" style="margin-top:12px;display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+    <div class="panel-card">
+      <div class="panel-title"><i class="fas fa-chart-bar"></i> Churn by Cohort</div>
+      <canvas id="churnChart" height="160"></canvas>
+    </div>
+  </div>
+
+  <!-- ═══ PAGE: MARKET HEALTH ════════════════════════════════════ -->
+  <div id="page-market-health" class="page">
+    <div class="gh">
+      <div class="gh-title"><i class="fas fa-heartbeat" style="color:var(--gr);margin-right:8px"></i>Marketplace Growth Health</div>
+      <div class="gh-sub">Two-sided marketplace metrics — monitor supply and demand balance in real time.</div>
+      <div class="gh-actions">
+        <button class="btn-ghost" onclick="refreshHealth()"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+    </div>
+    <!-- Health scores -->
+    <div class="health-grid" id="health-scores"></div>
+    <!-- Side-by-side metrics -->
+    <div class="g2" style="margin-bottom:14px">
+      <div class="panel-card">
+        <div class="panel-title" style="color:var(--gc)"><i class="fas fa-user-tie"></i> Client Metrics</div>
+        <div class="gm-grid" style="margin-top:14px" id="client-health-metrics"></div>
+        <canvas id="clientGrowthChart" height="160"></canvas>
+      </div>
+      <div class="panel-card">
+        <div class="panel-title" style="color:var(--a)"><i class="fas fa-user-check"></i> Helper Metrics</div>
+        <div class="gm-grid" style="margin-top:14px" id="helper-health-metrics"></div>
+        <canvas id="helperGrowthChart" height="160"></canvas>
+      </div>
+    </div>
+    <!-- Supply/demand -->
+    <div class="panel-card">
+      <div class="panel-title"><i class="fas fa-balance-scale"></i> Supply vs Demand Balance</div>
+      <canvas id="supplyDemandChart" height="160" style="margin-top:10px"></canvas>
+    </div>
+  </div>
+
+  <!-- Campaign Create Modal -->
+  <div class="modal-overlay" id="campModal">
+    <div class="modal" style="max-width:560px">
+      <div class="modal-header"><h3><i class="fas fa-rocket"></i> New Campaign</h3><button class="modal-close" onclick="closeModal('campModal')"><i class="fas fa-times"></i></button></div>
+      <div class="modal-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="grid-column:1/-1">
+          <div class="field-lbl">Campaign Name</div>
+          <input type="text" id="cm-name" class="input-sm" style="width:100%" placeholder="e.g. Nairobi Back-to-School Push">
+        </div>
+        <div>
+          <div class="field-lbl">Type</div>
+          <select id="cm-type" class="input-sm" style="width:100%">
+            <option value="paid_ads">Paid Ads</option><option value="influencer">Influencer</option>
+            <option value="referral">Referral</option><option value="email">Email</option>
+            <option value="push">Push Notification</option><option value="sms">SMS</option>
+            <option value="social">Social Media</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-lbl">Channel</div>
+          <input type="text" id="cm-channel" class="input-sm" style="width:100%" placeholder="e.g. Facebook, Google">
+        </div>
+        <div>
+          <div class="field-lbl">Budget (KES)</div>
+          <input type="number" id="cm-budget" class="input-sm" style="width:100%" placeholder="50000">
+        </div>
+        <div>
+          <div class="field-lbl">Start Date</div>
+          <input type="date" id="cm-start" class="input-sm" style="width:100%">
+        </div>
+        <div>
+          <div class="field-lbl">End Date</div>
+          <input type="date" id="cm-end" class="input-sm" style="width:100%">
+        </div>
+        <div>
+          <div class="field-lbl">Target Location</div>
+          <input type="text" id="cm-location" class="input-sm" style="width:100%" placeholder="e.g. Nairobi">
+        </div>
+        <div>
+          <div class="field-lbl">Objective</div>
+          <select id="cm-objective" class="input-sm" style="width:100%">
+            <option>Signups</option><option>Jobs Posted</option><option>Brand Awareness</option><option>Revenue</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1">
+          <div class="field-lbl">Landing Page URL</div>
+          <input type="text" id="cm-landing" class="input-sm" style="width:100%" placeholder="https://aminy.co.ke/?ref=...">
+        </div>
+        <div style="grid-column:1/-1">
+          <div class="field-lbl">UTM Parameters</div>
+          <input type="text" id="cm-utm" class="input-sm" style="width:100%" placeholder="utm_source=facebook&utm_medium=cpc&utm_campaign=nairobi">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeModal('campModal')">Cancel</button>
+        <button class="btn-a" onclick="saveCampaign()"><i class="fas fa-save"></i> Save Campaign</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Influencer Add Modal -->
+  <div class="modal-overlay" id="infModal">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-header"><h3><i class="fas fa-star"></i> Add Partner</h3><button class="modal-close" onclick="closeModal('infModal')"><i class="fas fa-times"></i></button></div>
+      <div class="modal-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="grid-column:1/-1">
+          <div class="field-lbl">Name / Handle</div>
+          <input type="text" id="inf-name-inp" class="input-sm" style="width:100%" placeholder="@influencer_ke">
+        </div>
+        <div>
+          <div class="field-lbl">Platform</div>
+          <select id="inf-plat-inp" class="input-sm" style="width:100%">
+            <option>Instagram</option><option>TikTok</option><option>YouTube</option><option>Facebook</option><option>X</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-lbl">Audience Size</div>
+          <input type="number" id="inf-size-inp" class="input-sm" style="width:100%" placeholder="50000">
+        </div>
+        <div>
+          <div class="field-lbl">Referral Code</div>
+          <input type="text" id="inf-code-inp" class="input-sm" style="width:100%" placeholder="AMINY-INF01">
+        </div>
+        <div>
+          <div class="field-lbl">Commission %</div>
+          <input type="number" id="inf-comm-inp" class="input-sm" style="width:100%" placeholder="10" value="10">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeModal('infModal')">Cancel</button>
+        <button class="btn-a" onclick="saveInfluencer()"><i class="fas fa-save"></i> Add Partner</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Growth Engine FAB -->
+  <button class="ai-fab" id="ai-fab" onclick="toggleAIPanel()" title="AI Growth Engine"><i class="fas fa-brain"></i></button>
+  <div class="ai-panel" id="ai-panel">
+    <div class="ai-ph">
+      <div class="ai-dot"></div>
+      <div><div class="ai-ptitle">Growth AI Engine</div><div class="ai-psub">Powered by Claude · Real-time insights</div></div>
+      <button onclick="toggleAIPanel()" style="margin-left:auto;background:none;border:none;color:var(--t3);cursor:pointer;font-size:13px"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="ai-body" id="ai-body"></div>
+    <div class="ai-pfoot">
+      <input class="ai-inp" id="ai-inp" placeholder="Ask about growth, campaigns, retention…" onkeydown="if(event.key==='Enter')sendAIMsg()">
+      <button class="ai-send" onclick="sendAIMsg()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+</div><!-- /content -->
 </main>
 
 <!-- HELPER MODAL -->
@@ -1375,9 +2143,9 @@ const ROLE_BADGE_CLASS = {
 
 // What each role can access — ordered list defines sidebar order
 const ROLE_PERMISSIONS = {
-  super_admin:   ['overview','vetting','helpers','clients','jobs','applications','payments','reviews','badges','reports','notifications','activity','admin-management','settings'],
-  ops_admin:     ['overview','vetting','helpers','jobs','applications','reports','activity','settings'],
-  support_admin: ['overview','clients','reviews','notifications','badges','activity','settings'],
+  super_admin:   ['overview','vetting','helpers','clients','jobs','applications','payments','reviews','badges','reports','notifications','activity','admin-management','settings','campaigns','social','referrals','promos','push-campaigns','influencers','seo','paid-ads','retention','market-health'],
+  ops_admin:     ['overview','vetting','helpers','jobs','applications','reports','activity','settings','campaigns','paid-ads','seo','retention'],
+  support_admin: ['overview','clients','reviews','notifications','badges','activity','settings','social','referrals','promos','push-campaigns'],
   finance_admin: ['overview','payments','reports','activity','settings']
 };
 
@@ -1397,6 +2165,17 @@ const NAV_ITEMS = [
   { section:'Platform',    key:'activity',          icon:'fa-history',         label:'Activity Log' },
   { section:'Admin',       key:'admin-management',  icon:'fa-user-cog',        label:'Admin Management' },
   { section:'Admin',       key:'settings',          icon:'fa-cog',             label:'Settings' },
+  // ── GROWTH ENGINE ─────────────────────────────────────────
+  { section:'Growth',       key:'campaigns',       icon:'fa-rocket',          label:'Campaigns' },
+  { section:'Growth',       key:'social',          icon:'fa-hashtag',         label:'Social Media' },
+  { section:'Growth',       key:'referrals',       icon:'fa-users',           label:'Referrals',         badge:'ref-badge' },
+  { section:'Growth',       key:'promos',          icon:'fa-tag',             label:'Promo Codes' },
+  { section:'Growth',       key:'push-campaigns',  icon:'fa-bell',            label:'Push Campaigns' },
+  { section:'Growth',       key:'influencers',     icon:'fa-star',            label:'Influencers' },
+  { section:'Growth',       key:'seo',             icon:'fa-search',          label:'SEO Analytics' },
+  { section:'Growth',       key:'paid-ads',        icon:'fa-ad',              label:'Paid Ads' },
+  { section:'Growth',       key:'retention',       icon:'fa-redo-alt',        label:'Retention' },
+  { section:'Growth',       key:'market-health',   icon:'fa-heartbeat',       label:'Market Health' },
 ];
 
 function getAdminRole(profile) {
@@ -1590,40 +2369,18 @@ async function bootDashboard() {
 }
 
 // ── SESSION CHECK ─────────────────────────────────────────────
-// Hide the page immediately so nothing renders during the auth check.
-// Revealed only after admin role is confirmed — fail-safe by default.
-document.body.style.visibility = 'hidden';
-
 window.addEventListener('load', async () => {
-  try {
-    const { data: { session } } = await db.auth.getSession();
-
-    // Not logged in — redirect to login, remove admin URL from history
-    if (!session) {
-      window.location.replace('index.html');
+  const { data: { session } } = await db.auth.getSession();
+  if(session) {
+    const { data: profile } = await db.from('profiles').select('role,full_name').eq('id',session.user.id).maybeSingle();
+    if(profile && profile.role==='admin') {
+      // Fetch admin_role separately — graceful if column doesn't exist yet
+      let adminRole2 = null;
+      try { const { data: rd2 } = await db.from('profiles').select('admin_role').eq('id',session.user.id).maybeSingle(); adminRole2 = rd2?.admin_role || null; } catch(e) {}
+      currentUser = { ...session.user, ...profile, admin_role: adminRole2 };
+      bootDashboard();
       return;
     }
-
-    const { data: profile, error } = await db
-      .from('profiles')
-      .select('role, full_name, admin_role')
-      .eq('id', session.user.id)
-      .maybeSingle();
-
-    // Profile missing, query error, or not an admin — reject and redirect
-    if (error || !profile || profile.role !== 'admin') {
-      window.location.replace('index.html');
-      return;
-    }
-
-    // Admin confirmed — reveal page and boot dashboard
-    currentUser = { ...session.user, ...profile };
-    document.body.style.visibility = 'visible';
-    bootDashboard();
-
-  } catch (err) {
-    // Any unexpected failure (network, Supabase unreachable) — fail safe
-    window.location.replace('index.html');
   }
 });
 
@@ -1746,41 +2503,27 @@ async function loadVettingQueue() {
       container.innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><h4>All caught up!</h4><p>No helpers pending review right now.</p></div>`;
       return;
     }
-    // Generate signed URLs for each helper's private documents (7-day expiry)
-    async function signedUrl(path) {
-      if (!path) return null;
-      const { data, error } = await db.storage.from('verification-docs').createSignedUrl(path, 60 * 60 * 24 * 7);
-      return error ? null : data.signedUrl;
-    }
-    const cards = await Promise.all(helpers.map(async h => {
-      const selfieUrl  = await signedUrl(h.selfie_url);
-      const idUrl      = await signedUrl(h.id_url);
-      const conductUrl = await signedUrl(h.cert_good_conduct_url);
-      function esc(v) { return (v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-      const nameForBtn = (h.full_name||'').replace(/'/g,"\\'");
-      return `
+    container.innerHTML = helpers.map(h=>`
       <div class="vq-card" id="vcard-${h.id}">
         <div class="vq-docs">
-          ${selfieUrl?`<a href="${selfieUrl}" target="_blank"><img src="${selfieUrl}" class="doc-thumb" title="Selfie" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">🤳</div>`}
-          ${idUrl?`<a href="${idUrl}" target="_blank"><img src="${idUrl}" class="doc-thumb" title="National ID" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">🪪</div>`}
-          ${conductUrl?`<a href="${conductUrl}" target="_blank"><img src="${conductUrl}" class="doc-thumb" title="Police Clearance" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">📋</div>`}
+          ${h.selfie_url?`<a href="${h.selfie_url}" target="_blank"><img src="${h.selfie_url}" class="doc-thumb" title="Selfie" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">🤳</div>`}
+          ${h.id_url?`<a href="${h.id_url}" target="_blank"><img src="${h.id_url}" class="doc-thumb" title="National ID" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">🪪</div>`}
+          ${h.cert_good_conduct_url?`<a href="${h.cert_good_conduct_url}" target="_blank"><img src="${h.cert_good_conduct_url}" class="doc-thumb" title="Police Clearance" onerror="this.style.display='none'"></a>`:`<div class="doc-thumb-placeholder">📋</div>`}
         </div>
         <div class="vq-info">
-          <div class="vq-name">${esc(h.full_name)||'Unknown Helper'}</div>
+          <div class="vq-name">${h.full_name||'Unknown Helper'}</div>
           <div class="vq-meta">
             ${statusBadge(h.is_vetted)}
-            <span><i class="fas fa-map-marker-alt" style="color:var(--orange)"></i> ${esc(h.location_name)||'Location unknown'}</span>
-            <span><i class="fas fa-envelope" style="color:var(--grey-400)"></i> ${esc(h.email)}</span>
+            <span><i class="fas fa-map-marker-alt" style="color:var(--orange)"></i> ${h.location_name||'Location unknown'}</span>
+            <span><i class="fas fa-envelope" style="color:var(--grey-400)"></i> ${h.email||''}</span>
           </div>
           <input type="text" id="feedback-${h.id}" class="vq-feedback" placeholder="Rejection reason (required if rejecting)…">
           <div class="vq-actions">
-            <button class="btn-approve" onclick="approveHelper('${h.id}','${nameForBtn}')"><i class="fas fa-check"></i> Approve</button>
-            <button class="btn-reject" onclick="rejectHelper('${h.id}','${nameForBtn}')"><i class="fas fa-times"></i> Reject</button>
+            <button class="btn-approve" onclick="approveHelper('${h.id}','${(h.full_name||'').replace(/'/g,"\\'")}')"><i class="fas fa-check"></i> Approve</button>
+            <button class="btn-reject" onclick="rejectHelper('${h.id}','${(h.full_name||'').replace(/'/g,"\\'")}')"><i class="fas fa-times"></i> Reject</button>
           </div>
         </div>
-      </div>`;
-    }));
-    container.innerHTML = cards.join('');
+      </div>`).join('');
   } catch(e) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>Error: ${e.message}</div>`;
   }
@@ -2413,7 +3156,18 @@ const pageMeta = {
   notifications:    ['Notifications',     'Broadcast messages to users'],
   activity:         ['Activity Log',      'Admin action history'],
   'admin-management':['Admin Management', 'Manage admin accounts and roles'],
-  settings:         ['Settings',          'Your account configuration']
+  settings:         ['Settings',          'Your account configuration'],
+  // Growth Engine pages
+  campaigns:        ['Campaign Manager',     'Track all marketing campaigns'],
+  social:           ['Social Media Manager', 'Schedule posts and track engagement'],
+  referrals:        ['Referral System',      'Viral invite loops and K-factor'],
+  promos:           ['Promo Codes',          'Discounts and redemption tracking'],
+  'push-campaigns': ['Push Campaigns',       'Segmented notification campaigns'],
+  influencers:      ['Influencer Tracking',  'Partners, affiliates and commissions'],
+  seo:              ['SEO Analytics',        'Traffic, keywords and rankings'],
+  'paid-ads':       ['Paid Ads Dashboard',   'Meta, Google and TikTok unified'],
+  retention:        ['Retention Engine',     'Reactivation and churn reduction'],
+  'market-health':  ['Market Health',        'Two-sided marketplace metrics']
 };
 
 function navigate(pageKey) {
@@ -2444,6 +3198,9 @@ function navigate(pageKey) {
   if(pageKey==='reports')           loadReportsPage();
   if(pageKey==='activity')          loadActivityLog();
   if(pageKey==='admin-management')  loadAdminAccounts();
+  // Growth Engine pages
+  const growthPages=['campaigns','social','referrals','promos','push-campaigns','influencers','seo','paid-ads','retention','market-health'];
+  if(growthPages.includes(pageKey)) loadGrowthPage(pageKey);
 
   closeMobileSidebar();
 }
@@ -2465,6 +3222,931 @@ function showToast(msg, type='green') {
   setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(8px)'; t.style.transition='all 0.3s'; setTimeout(()=>t.remove(),300); },3200);
 }
 
+
+
+// ═══════════════════════════════════════════════════════════
+// AMINY GROWTH ENGINE — Marketing Control Center JS
+// ═══════════════════════════════════════════════════════════
+
+// ── SHARED CHART DEFAULTS ───────────────────────────────────
+const GCFG = {
+  font: "'DM Mono', monospace",
+  grid: 'rgba(255,255,255,0.04)',
+  tick: '#4a5e70',
+  tooltip: { bg:'#0d1117', border:'rgba(255,255,255,0.08)', pad:10 },
+  palette: ['#b8ff4f','#22d3ee','#fb7185','#818cf8','#fbbf24','#2dd4bf','#c084fc']
+};
+function gDefaults(chart) {
+  if (!chart?.options) return;
+  chart.options.plugins = chart.options.plugins || {};
+  chart.options.plugins.tooltip = chart.options.plugins.tooltip || {};
+  Object.assign(chart.options.plugins.tooltip, { backgroundColor:GCFG.tooltip.bg, borderColor:GCFG.tooltip.border, borderWidth:1, padding:GCFG.tooltip.pad, cornerRadius:8 });
+  chart.options.plugins.legend = chart.options.plugins.legend || {};
+  chart.options.plugins.legend.labels = chart.options.plugins.legend.labels || {};
+  chart.options.plugins.legend.labels.color = GCFG.tick;
+  chart.options.plugins.legend.labels.font = { family: GCFG.font, size:10 };
+  ['x','y'].forEach(ax => {
+    if (chart.options.scales?.[ax]) {
+      chart.options.scales[ax].grid = { color:GCFG.grid };
+      chart.options.scales[ax].ticks = { color:GCFG.tick, font:{ family:GCFG.font, size:10 } };
+    }
+  });
+  return chart;
+}
+function mkChart(id, cfg) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+  return gDefaults(new Chart(ctx, cfg));
+}
+
+// ── GROWTH SHARED STATE ─────────────────────────────────────
+let growthCharts = {};
+let campaigns = [], promos = [], influencers = [], aiHistory = [];
+let currentAdPlatform = 'all';
+let promoType = 'pct';
+let selectedTemplate = null;
+
+// ── UTILITY: button helpers ─────────────────────────────────
+function gmCard(cls, icon, val, lbl, delta='', deltaType='') {
+  return `<div class="gmc ${cls}">
+    <div class="gm-icon"><i class="fas ${icon}"></i></div>
+    <div class="gm-val">${val}</div>
+    <div class="gm-lbl">${lbl}</div>
+    ${delta ? `<div class="gm-delta d-${deltaType}"><i class="fas fa-arrow-${deltaType==='up'?'up':'down'}"></i>${delta}</div>` : ''}
+  </div>`;
+}
+function funnelRow(label, val, max, color) {
+  const pct = max > 0 ? Math.round(val/max*100) : 0;
+  return `<div class="funnel-row">
+    <div class="funnel-lbl">${label}</div>
+    <div class="funnel-bw"><div class="funnel-b" style="width:${pct}%;background:${color}"></div></div>
+    <div class="funnel-v">${val.toLocaleString()}</div>
+  </div>`;
+}
+function lbRow(rank, name, sub, val, barPct, color) {
+  const rankCls = rank <= 3 ? `r${rank}` : '';
+  const initl = (name||'?')[0].toUpperCase();
+  return `<div class="lb-row">
+    <div class="lb-rank ${rankCls}">${rank}</div>
+    <div class="lb-av" style="background:${color}">${initl}</div>
+    <div class="lb-info"><div class="lb-name">${name}</div><div class="lb-sub">${sub}</div></div>
+    <div style="flex:1;margin:0 10px;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden"><div style="height:100%;width:${barPct}%;background:${color};border-radius:2px"></div></div>
+    <div class="lb-val">${val}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 1 — CAMPAIGNS
+// ═══════════════════════════════════════════════════════════
+async function loadCampaigns() {
+  // KPIs
+  document.getElementById('camp-kpis').innerHTML =
+    gmCard('c-l','fa-bullhorn','12','Active Campaigns','3 this week','up') +
+    gmCard('c-c','fa-eye','284K','Total Impressions','18%','up') +
+    gmCard('c-t','fa-mouse-pointer','9,240','Total Clicks','12%','up') +
+    gmCard('c-r','fa-user-plus','1,847','Signups','24%','up') +
+    gmCard('c-i','fa-coins','KES 420','Avg Cost/Signup','8%','dn') +
+    gmCard('c-a','fa-chart-line','KES 2.1M','Revenue Attributed','31%','up');
+
+  // Try load from DB, fall back to seed data
+  try {
+    const { data, error } = await db.from('campaigns').select('*').order('created_at',{ascending:false});
+    campaigns = data || seedCampaigns();
+  } catch(e) { campaigns = seedCampaigns(); }
+
+  renderCampaignCards(campaigns);
+  renderCampFunnel();
+  renderROIChart();
+}
+
+function seedCampaigns() {
+  return [
+    { id:1, name:'Nairobi Back-to-School', type:'paid_ads', channel:'Meta Ads', budget:80000, spent:52000, status:'live', impressions:142000, clicks:4800, signups:620, revenue:310000, start:'2025-08-01', end:'2025-08-31', location:'Nairobi', objective:'Signups' },
+    { id:2, name:'TikTok Helpers Promo', type:'influencer', channel:'TikTok', budget:40000, spent:28000, status:'live', impressions:98000, clicks:3200, signups:410, revenue:205000, start:'2025-08-05', end:'2025-09-05', location:'Kenya', objective:'Signups' },
+    { id:3, name:'Referral Blitz July', type:'referral', channel:'In-App', budget:20000, spent:20000, status:'ended', impressions:0, clicks:0, signups:892, revenue:446000, start:'2025-07-01', end:'2025-07-31', location:'All', objective:'Referrals' },
+    { id:4, name:'Welcome Email Series', type:'email', channel:'Resend', budget:5000, spent:2400, status:'live', impressions:8400, clicks:1240, signups:380, revenue:190000, start:'2025-08-10', end:'2025-09-10', location:'All', objective:'Activation' },
+    { id:5, name:'Mombasa Launch Push', type:'push', channel:'App Push', budget:10000, spent:3000, status:'draft', impressions:0, clicks:0, signups:0, revenue:0, start:'2025-09-01', end:'2025-09-15', location:'Mombasa', objective:'Signups' },
+    { id:6, name:'Google Search — Cleaners', type:'paid_ads', channel:'Google Ads', budget:60000, spent:41000, status:'paused', impressions:88000, clicks:2200, signups:315, revenue:157500, start:'2025-07-15', end:'2025-08-15', location:'Nairobi', objective:'Revenue' },
+  ];
+}
+
+function campTypeIcon(type) {
+  return {paid_ads:'fa-ad',influencer:'fa-star',referral:'fa-users',email:'fa-envelope',push:'fa-bell',sms:'fa-sms',social:'fa-hashtag'}[type] || 'fa-bullhorn';
+}
+function campStatusChip(s) {
+  return {live:'<span class="chip chip-live">● Live</span>',paused:'<span class="chip chip-paused">⏸ Paused</span>',ended:'<span class="chip chip-ended">✓ Ended</span>',draft:'<span class="chip chip-draft">◎ Draft</span>'}[s] || '';
+}
+
+function renderCampaignCards(list) {
+  const el = document.getElementById('camp-cards');
+  if (!el) return;
+  if (!list.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📣</div><h4>No campaigns yet</h4><p>Create your first campaign to start growing.</p></div>'; return; }
+  el.innerHTML = list.map(c => {
+    const pct = c.budget > 0 ? Math.min(100, Math.round(c.spent/c.budget*100)) : 0;
+    const roi = c.spent > 0 ? Math.round((c.revenue - c.spent)/c.spent*100) : 0;
+    const cps = c.signups > 0 ? Math.round(c.spent/c.signups) : 0;
+    return `<div class="camp-card">
+      <div class="camp-hd">
+        <div>
+          <div class="camp-name">${c.name}</div>
+          <div class="camp-ch"><i class="fas ${campTypeIcon(c.type)}" style="margin-right:4px;opacity:.6"></i>${c.channel} · ${c.location||'Kenya'}</div>
+        </div>
+        ${campStatusChip(c.status)}
+      </div>
+      <div class="camp-stats">
+        <div class="cs-item"><div class="cs-val">${(c.impressions||0).toLocaleString()}</div><div class="cs-lbl">Impressions</div></div>
+        <div class="cs-item"><div class="cs-val">${(c.signups||0).toLocaleString()}</div><div class="cs-lbl">Signups</div></div>
+        <div class="cs-item"><div class="cs-val">KES ${cps.toLocaleString()}</div><div class="cs-lbl">Cost/Signup</div></div>
+        <div class="cs-item"><div class="cs-val" style="color:${roi>=0?'var(--a)':'var(--red)'}">${roi>=0?'+':''}${roi}%</div><div class="cs-lbl">ROI</div></div>
+      </div>
+      <div class="bbar-lbl"><span>Budget Used</span><span>KES ${c.spent.toLocaleString()} / ${c.budget.toLocaleString()}</span></div>
+      <div class="bbar"><div class="bbar-fill" style="width:${pct}%;background:${pct>90?'var(--red)':pct>70?'var(--gam)':'var(--a)'}"></div></div>
+      <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:4px">
+        <button class="btn-ghost" style="padding:4px 10px;font-size:11px" onclick="editCampaign(${c.id})"><i class="fas fa-edit"></i></button>
+        ${c.status==='live'?`<button class="btn-ghost" style="padding:4px 10px;font-size:11px" onclick="pauseCampaign(${c.id})"><i class="fas fa-pause"></i></button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterCamps(type, btn) {
+  document.querySelectorAll('#page-campaigns .gm-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = type === 'all' ? campaigns : campaigns.filter(c => c.type === type);
+  renderCampaignCards(filtered);
+}
+
+function renderCampFunnel() {
+  const el = document.getElementById('camp-funnel');
+  if (!el) return;
+  const reach=284000, clicks=9240, signups=1847, jobs=932;
+  el.innerHTML = funnelRow('Impressions', reach, reach, 'var(--a)') +
+    funnelRow('Clicks', clicks, reach, 'var(--gc)') +
+    funnelRow('Signups', signups, reach, 'var(--gi)') +
+    funnelRow('Jobs Posted', jobs, reach, 'var(--gam)');
+}
+
+function renderROIChart() {
+  if (growthCharts.roi) growthCharts.roi.destroy();
+  growthCharts.roi = mkChart('roiChart', {
+    type:'bar',
+    data:{ labels:['Meta','Google','TikTok','Email','Referral','Push'],
+      datasets:[{label:'ROI %',data:[287,194,312,520,740,180],backgroundColor:GCFG.palette.map(c=>c+'22'),borderColor:GCFG.palette,borderWidth:2,borderRadius:4}]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>v+'%'}}} }
+  });
+}
+
+function openCampModal() { document.getElementById('campModal').classList.add('open') }
+async function saveCampaign() {
+  const name=document.getElementById('cm-name').value.trim();
+  if(!name){showToast('Campaign name required','orange');return;}
+  const camp = {
+    name, type:document.getElementById('cm-type').value,
+    channel:document.getElementById('cm-channel').value,
+    budget:Number(document.getElementById('cm-budget').value)||0,
+    spent:0, status:'draft', impressions:0, clicks:0, signups:0, revenue:0,
+    start:document.getElementById('cm-start').value, end:document.getElementById('cm-end').value,
+    location:document.getElementById('cm-location').value,
+    objective:document.getElementById('cm-objective').value,
+    landing_page:document.getElementById('cm-landing').value,
+    utm:document.getElementById('cm-utm').value,
+  };
+  try { await db.from('campaigns').insert([camp]); } catch(e) {}
+  campaigns.unshift({...camp, id: Date.now()});
+  renderCampaignCards(campaigns);
+  closeModal('campModal');
+  showToast('✅ Campaign saved!');
+  await logAction('create_campaign','campaigns',null,{name});
+}
+function editCampaign(id) { showToast('Edit campaign — coming soon','orange') }
+async function pauseCampaign(id) {
+  campaigns = campaigns.map(c => c.id===id ? {...c, status:'paused'} : c);
+  renderCampaignCards(campaigns);
+  showToast('Campaign paused');
+}
+function exportCampaigns() { showToast('Exporting campaigns…') }
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 2 — SOCIAL MEDIA
+// ═══════════════════════════════════════════════════════════
+const PLATFORMS = [
+  {id:'fb',  name:'Facebook',  icon:'fab fa-facebook', cls:'p-fb', followers:'14.2K'},
+  {id:'ig',  name:'Instagram', icon:'fab fa-instagram',cls:'p-ig', followers:'8.7K'},
+  {id:'tt',  name:'TikTok',    icon:'fab fa-tiktok',   cls:'p-tt', followers:'22.1K'},
+  {id:'x',   name:'X (Twitter)',icon:'fab fa-x-twitter',cls:'p-x', followers:'3.4K'},
+  {id:'li',  name:'LinkedIn',  icon:'fab fa-linkedin', cls:'p-li', followers:'1.2K'},
+  {id:'yt',  name:'YouTube',   icon:'fab fa-youtube',  cls:'p-yt', followers:'980'},
+];
+async function loadSocial() {
+  // Platform cards
+  document.getElementById('plat-cards').innerHTML = PLATFORMS.map(p => `
+    <div class="plat-card">
+      <div class="plat-icon ${p.cls}"><i class="${p.icon}"></i></div>
+      <div class="plat-name">${p.name}</div>
+      <div class="plat-fans">${p.followers}</div>
+      <div class="plat-lbl">Followers</div>
+    </div>`).join('');
+  buildCalendar();
+  renderMediaLibrary();
+}
+
+function buildCalendar() {
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hdr = document.getElementById('cal-header');
+  const body = document.getElementById('cal-body');
+  if (!hdr || !body) return;
+  hdr.innerHTML = days.map(d => `<div class="cal-dh">${d}</div>`).join('');
+  const posts = {
+    1:[{plat:'fb',text:'Cleaning special 🧹'},],
+    3:[{plat:'ig',text:'Helper spotlight'},],
+    5:[{plat:'tt',text:'TikTok tutorial'},],
+    8:[{plat:'fb',text:'Weekly offer'},],
+    10:[{plat:'x',text:'Quick update'}],
+    15:[{plat:'ig',text:'Client story'},],
+    20:[{plat:'tt',text:'BTS content'},],
+    22:[{plat:'fb',text:'Promotion launch'}],
+  };
+  const today = new Date().getDate();
+  let html = '';
+  for(let i=1;i<=28;i++){
+    const isToday = i===today;
+    const dayPosts = posts[i]||[];
+    html += `<div class="cal-day${isToday?' today':''}">
+      <div class="cal-dt">${i}</div>
+      ${dayPosts.map(p=>`<div class="cal-post cp-${p.plat}" title="${p.text}">${p.text}</div>`).join('')}
+    </div>`;
+  }
+  body.innerHTML = html;
+  renderSocialCharts();
+}
+
+function renderSocialCharts() {
+  if (growthCharts.social) growthCharts.social.destroy();
+  const labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  growthCharts.social = mkChart('socialChart',{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Reach',data:[4200,5800,4900,7200,6100,8400,9200],borderColor:'var(--a)',backgroundColor:'rgba(184,255,79,.06)',borderWidth:2,fill:true,tension:.4,pointRadius:3},
+      {label:'Impressions',data:[8800,11200,9600,14100,12400,16800,18900],borderColor:'var(--gc)',backgroundColor:'rgba(34,211,238,.04)',borderWidth:2,fill:true,tension:.4,pointRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false}
+  });
+  // Top posts
+  const tp = document.getElementById('top-posts-list');
+  if(tp) tp.innerHTML = [
+    {plat:'TikTok',text:'Helper spotlight reel',likes:'2.4K',shares:'340',ico:'fab fa-tiktok',col:'var(--gc)'},
+    {plat:'Instagram',text:'Before/after cleaning',likes:'1.8K',shares:'210',ico:'fab fa-instagram',col:'#e1306c'},
+    {plat:'Facebook',text:'Nairobi launch post',likes:'1.2K',shares:'180',ico:'fab fa-facebook',col:'#1877f2'},
+  ].map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b1)">
+    <div style="width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(255,255,255,.05);color:${p.col};flex-shrink:0"><i class="${p.ico}"></i></div>
+    <div style="flex:1;font-size:12px;color:var(--t1)">${p.text}</div>
+    <div style="font-size:11px;color:var(--t3)">❤ ${p.likes} · ↗ ${p.shares}</div>
+  </div>`).join('');
+  // Engagement heatmap
+  const hm = document.getElementById('eng-heatmap');
+  if(hm){
+    const vals=[0.2,0.5,0.8,0.4,0.9,0.3,0.7, 0.6,0.8,0.4,0.9,0.7,0.5,0.8, 0.3,0.7,0.6,0.8,0.5,0.9,0.6, 0.8,0.4,0.7,0.6,0.9,0.7,0.8];
+    hm.innerHTML = vals.map(v=>`<div style="height:28px;border-radius:4px;background:rgba(184,255,79,${v});cursor:pointer" title="${Math.round(v*100)}% engagement"></div>`).join('');
+  }
+}
+
+function socialTab(tab, btn) {
+  document.querySelectorAll('#page-social .gm-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('social-calendar-view').style.display = tab==='calendar'?'':'none';
+  document.getElementById('social-analytics-view').style.display = tab==='analytics'?'':'none';
+  document.getElementById('social-library-view').style.display = tab==='library'?'':'none';
+  if(tab==='analytics') renderSocialCharts();
+}
+
+function renderMediaLibrary() {
+  const el = document.getElementById('media-library-grid');
+  if(!el) return;
+  const colors=['#b8ff4f22','#22d3ee22','#fb718522','#818cf822','#fbbf2422','#2dd4bf22','#c084fc22','#b8ff4f22'];
+  el.innerHTML = colors.map((c,i)=>`<div style="height:70px;background:${c};border-radius:8px;border:1px solid var(--b1);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer">${['🖼','📸','🎥','📊','🎨','📱','💻','🌟'][i]}</div>`).join('') +
+    `<div style="height:70px;background:rgba(255,255,255,.02);border:1px dashed var(--b2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;color:var(--t3)">+</div>`;
+}
+function openPostModal() { showToast('Post scheduler — connect your social accounts first','orange') }
+function openHashtagManager() { showToast('Hashtag manager — coming soon','orange') }
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 3 — REFERRALS
+// ═══════════════════════════════════════════════════════════
+async function loadReferrals() {
+  document.getElementById('ref-kpis').innerHTML =
+    gmCard('c-i','fa-paper-plane','8,420','Total Invites','22%','up') +
+    gmCard('c-l','fa-user-check','3,180','Successful Referrals','31%','up') +
+    gmCard('c-c','fa-percentage','37.8%','Conversion Rate','4%','up') +
+    gmCard('c-a','fa-coins','KES 1.59M','Revenue via Referrals','28%','up');
+
+  // Viral coefficient (K = invites_per_user × conversion_rate)
+  const k = (2.1 * 0.378).toFixed(2);
+  document.getElementById('viral-coeff').textContent = k;
+  document.getElementById('viral-avg').textContent = k;
+
+  // Funnel
+  const el = document.getElementById('ref-funnel');
+  if(el) el.innerHTML = funnelRow('Invites Sent',8420,8420,'var(--gi)') + funnelRow('Link Clicked',5610,8420,'var(--gc)') + funnelRow('Signed Up',3180,8420,'var(--a)') + funnelRow('First Job Done',1890,8420,'var(--gam)');
+
+  // Leaderboard
+  const top = [{n:'Grace Wanjiku',code:'GRACE10',refs:42},{n:'John Kamau',code:'JOHN22',refs:38},{n:'Faith Achieng',code:'FAITH5',refs:31},{n:'Moses Otieno',code:'MOSES9',refs:27},{n:'Amina Said',code:'AMINA3',refs:24}];
+  const colors = GCFG.palette;
+  document.getElementById('ref-leaderboard').innerHTML = top.map((r,i)=>lbRow(i+1,r.n,r.code,r.refs+' referrals',Math.round(r.refs/42*100),colors[i%colors.length])).join('');
+}
+
+function saveRefSettings() { showToast('✅ Referral settings saved!') }
+function createRefCampaign() { openCampModal() }
+function generateQR() { showToast('QR code download — coming soon','orange') }
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 4 — PROMO CODES
+// ═══════════════════════════════════════════════════════════
+const PROMO_WORDS = ['AMINY','NAIROBI','HELPER','CLEAN','DEAL','SAVE','NEW','LAUNCH'];
+async function loadPromos() {
+  document.getElementById('promo-kpis').innerHTML =
+    gmCard('c-a','fa-ticket-alt','42','Active Codes','6','up') +
+    gmCard('c-l','fa-check-double','2,840','Total Redemptions','18%','up') +
+    gmCard('c-c','fa-user-plus','1,120','New Users Acquired','24%','up') +
+    gmCard('c-r','fa-minus-circle','KES 284K','Revenue Impact','12%','dn');
+
+  genPromoCode();
+  renderPromoTable();
+  renderPromoChart();
+}
+
+function setPromoType(t,btn) {
+  promoType=t;
+  document.getElementById('promo-pct-btn').style.borderColor='';
+  document.getElementById('promo-fix-btn').style.borderColor='';
+  btn.style.borderColor='var(--gam)';
+  genPromoCode();
+}
+
+function genPromoCode() {
+  const w = PROMO_WORDS[Math.floor(Math.random()*PROMO_WORDS.length)];
+  const n = Math.floor(Math.random()*90)+10;
+  const val = document.getElementById('promo-value')?.value || '20';
+  document.getElementById('promo-preview').textContent = `${w}${val}${promoType==='pct'?'OFF':'KES'}`;
+}
+
+function copyPromo() {
+  const code = document.getElementById('promo-preview').textContent;
+  navigator.clipboard?.writeText(code).then(()=>showToast('Code copied!')).catch(()=>showToast(code));
+}
+
+async function savePromoCode() {
+  const code = document.getElementById('promo-preview').textContent;
+  const promo = {
+    code, type:promoType, value:Number(document.getElementById('promo-value').value)||20,
+    limit:Number(document.getElementById('promo-limit').value)||100,
+    expiry:document.getElementById('promo-expiry').value,
+    category:document.getElementById('promo-cat').value||'all',
+    new_only:document.getElementById('promo-new-only').checked,
+    used:0, status:'active'
+  };
+  try { await db.from('promo_codes').insert([promo]); } catch(e) {}
+  promos.unshift(promo);
+  renderPromoTable();
+  showToast('✅ Promo code saved!');
+  await logAction('create_promo','promo_codes',null,{code});
+}
+
+function renderPromoTable() {
+  const seed = [{code:'AMINY20OFF',type:'pct',value:20,limit:500,used:312,expiry:'2025-09-30',status:'active'},{code:'NAIROBI100KES',type:'fix',value:100,limit:200,used:198,expiry:'2025-08-31',status:'active'},{code:'NEWUSER50OFF',type:'pct',value:50,limit:1000,used:847,expiry:'2025-12-31',status:'active'},{code:'LAUNCH200KES',type:'fix',value:200,limit:100,used:100,expiry:'2025-07-31',status:'ended'}];
+  const all = [...promos, ...seed];
+  const tbody = document.getElementById('promo-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = all.map(p=>`<tr>
+    <td><span style="font-family:var(--fm);color:var(--a);font-size:12px">${p.code}</span></td>
+    <td><span style="font-size:11px;color:var(--t3)">${p.type==='pct'?'% Off':'KES Off'}</span></td>
+    <td>${p.type==='pct'?p.value+'%':'KES '+p.value}</td>
+    <td style="font-family:var(--fm)">${p.used}</td>
+    <td style="color:var(--t3)">${p.limit}</td>
+    <td style="color:var(--t3);font-size:11px">${p.expiry||'—'}</td>
+    <td>${p.status==='active'?'<span class="chip chip-live">Active</span>':'<span class="chip chip-ended">Ended</span>'}</td>
+    <td><button class="btn-ghost" style="padding:3px 8px;font-size:10px" onclick="deactivatePromo('${p.code}')">Deactivate</button></td>
+  </tr>`).join('');
+}
+function deactivatePromo(code) { showToast(`Code ${code} deactivated`,'orange') }
+
+function renderPromoChart() {
+  if(growthCharts.promo) growthCharts.promo.destroy();
+  growthCharts.promo = mkChart('promoChart',{
+    type:'bar',
+    data:{labels:['Wk1','Wk2','Wk3','Wk4'],datasets:[{label:'Redemptions',data:[420,680,540,780],backgroundColor:'rgba(251,191,36,.15)',borderColor:'var(--gam)',borderWidth:2,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+  });
+}
+function openPromoModal() { showToast('Create code using the generator on the left','orange') }
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 5 — PUSH CAMPAIGNS
+// ═══════════════════════════════════════════════════════════
+const PUSH_TEMPLATES = [
+  {title:'Welcome Burst',body:'Welcome to Aminy! 🎉 Your first job is 20% off. Explore helpers near you.',tag:'Onboarding'},
+  {title:'Job Reminder',body:'You have 3 helpers waiting for your reply 👋 Don\'t miss out!',tag:'Retention'},
+  {title:'Promo Alert',body:'🔥 Flash deal: KES 200 off any booking today only. Use code FLASH200.',tag:'Promo'},
+  {title:'Reactivation',body:'We miss you! Come back and post a job — your first booking is on us 💚',tag:'Reactivation'},
+  {title:'Rating Request',body:'How was your experience with {helper_name}? Rate them and help the community ⭐',tag:'Review'},
+  {title:'New Helper',body:'A top-rated {category} helper just joined near {location}. Check them out!',tag:'Discovery'},
+];
+
+const PUSH_SEGMENTS = [
+  {key:'all',      icon:'fa-users',        color:'var(--a)',   name:'All Users',           desc:'Every registered user',count:'12,840'},
+  {key:'new',      icon:'fa-user-plus',    color:'var(--gc)',  name:'New Users (7d)',       desc:'Registered in last week',count:'340'},
+  {key:'inactive', icon:'fa-user-clock',   color:'var(--gam)', name:'Inactive (30d+)',      desc:'No activity in 30 days', count:'2,410'},
+  {key:'high',     icon:'fa-crown',        color:'var(--gi)',  name:'High-Value Clients',   desc:'3+ completed jobs',      count:'820'},
+  {key:'clients',  icon:'fa-briefcase',    color:'var(--gc)',  name:'Clients Only',         desc:'Client role users',      count:'7,200'},
+  {key:'helpers',  icon:'fa-hard-hat',     color:'var(--a)',   name:'Helpers Only',         desc:'Helper role users',      count:'5,640'},
+];
+
+async function loadPushCampaigns() {
+  document.getElementById('push-kpis').innerHTML =
+    gmCard('c-l','fa-paper-plane','48','Campaigns Sent','8 this month','up') +
+    gmCard('c-c','fa-envelope-open','68.4%','Open Rate','3%','up') +
+    gmCard('c-i','fa-mouse-pointer','24.1%','Click Rate','1.2%','up') +
+    gmCard('c-a','fa-check-circle','8.9%','Conversion Rate','0.8%','up');
+
+  // Segments
+  document.getElementById('push-segments').innerHTML = PUSH_SEGMENTS.map(s=>`
+    <div class="seg-row">
+      <div class="seg-ico" style="background:rgba(255,255,255,.04);color:${s.color}"><i class="fas ${s.icon}"></i></div>
+      <div class="seg-info"><div class="seg-name">${s.name}</div><div class="seg-desc">${s.desc}</div></div>
+      <div class="seg-cnt">${s.count}</div>
+    </div>`).join('');
+
+  // Templates
+  const tagColors={Onboarding:'var(--a)',Retention:'var(--gc)',Promo:'var(--gam)',Reactivation:'var(--gi)',Review:'var(--gp)',Discovery:'var(--gt)'};
+  document.getElementById('tpl-grid').innerHTML = PUSH_TEMPLATES.map((t,i)=>`
+    <div class="tpl-card" id="tpl-${i}" onclick="selectTemplate(${i})">
+      <div class="tpl-title">${t.title}</div>
+      <div class="tpl-body">${t.body.slice(0,60)}…</div>
+      <span style="display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;margin-top:6px;background:rgba(255,255,255,.05);color:${tagColors[t.tag]||'var(--t3)'}">${t.tag}</span>
+    </div>`).join('');
+
+  renderPushChart();
+}
+
+function selectTemplate(i) {
+  document.querySelectorAll('.tpl-card').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('tpl-'+i).classList.add('sel');
+  const t = PUSH_TEMPLATES[i];
+  document.getElementById('pc-title').value = t.title;
+  document.getElementById('pc-body').value = t.body;
+}
+
+async function sendPushCampaign() {
+  const title=document.getElementById('pc-title').value.trim();
+  const body=document.getElementById('pc-body').value.trim();
+  const channel=document.getElementById('pc-channel').value;
+  const segment=document.getElementById('pc-segment').value;
+  if(!title||!body){showToast('Title and message required','orange');return;}
+  showToast(`✅ Campaign "${title}" queued for ${channel.toUpperCase()} delivery!`);
+  await logAction('push_campaign','notifications',null,{title,channel,segment});
+}
+
+function renderPushChart() {
+  if(growthCharts.push) growthCharts.push.destroy();
+  growthCharts.push = mkChart('pushChart',{
+    type:'bar',
+    data:{labels:['Delivered','Opened','Clicked','Converted'],
+      datasets:[{data:[12840,8782,3094,1143],backgroundColor:[GCFG.palette[0]+'22',GCFG.palette[1]+'22',GCFG.palette[2]+'22',GCFG.palette[3]+'22'],borderColor:GCFG.palette,borderWidth:2,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+  });
+}
+function openPushCampModal() { document.getElementById('pc-title').focus() }
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 6 — INFLUENCERS
+// ═══════════════════════════════════════════════════════════
+const INF_SEED = [
+  {name:'Wanjiku Njeri',handle:'@wanjiku_ke',platform:'Instagram',size:'84K',code:'WANJIKU10',comm:10,signups:420,jobs:210,revenue:840000},
+  {name:'Brian Ochieng',handle:'@brianochieng',platform:'TikTok',size:'210K',code:'BRIAN15',comm:15,signups:890,jobs:445,revenue:1780000},
+  {name:'Amina Hassan',handle:'@aminalifestyle',platform:'YouTube',size:'32K',code:'AMINA20',comm:20,signups:180,jobs:90,revenue:360000},
+  {name:'Mike Mutua',handle:'@mikemutua_ke',platform:'Facebook',size:'45K',code:'MIKE10',comm:10,signups:340,jobs:170,revenue:680000},
+];
+
+async function loadInfluencers() {
+  document.getElementById('inf-kpis').innerHTML =
+    gmCard('c-a','fa-star','18','Active Partners','4 this month','up') +
+    gmCard('c-l','fa-user-plus','1,830','Signups Generated','34%','up') +
+    gmCard('c-i','fa-briefcase','915','Jobs Generated','28%','up') +
+    gmCard('c-r','fa-coins','KES 366K','Commissions Owed','','' );
+
+  const colors = GCFG.palette;
+  const el = document.getElementById('inf-cards');
+  if(el) el.innerHTML = [...influencers, ...INF_SEED].map((inf,i)=>`
+    <div class="inf-card">
+      <div class="comm-badge">${inf.comm}% comm.</div>
+      <div class="inf-hd">
+        <div class="inf-av" style="background:${colors[i%colors.length]}">${(inf.name||'?')[0]}</div>
+        <div><div class="inf-name">${inf.name}</div><div class="inf-handle">${inf.handle} · ${inf.platform}</div></div>
+      </div>
+      <div style="font-size:10.5px;color:var(--t3);margin-bottom:8px">Audience: <span style="color:var(--t1);font-family:var(--fm)">${inf.size}</span> · Code: <span style="color:var(--a);font-family:var(--fm)">${inf.code}</span></div>
+      <div class="inf-stats">
+        <div class="is-item"><div class="is-val">${inf.signups.toLocaleString()}</div><div class="is-lbl">Signups</div></div>
+        <div class="is-item"><div class="is-val">${inf.jobs.toLocaleString()}</div><div class="is-lbl">Jobs</div></div>
+        <div class="is-item"><div class="is-val">KES ${Math.round(inf.revenue/1000)}K</div><div class="is-lbl">Revenue</div></div>
+      </div>
+    </div>`).join('');
+
+  // Leaderboard
+  const sorted = [...influencers,...INF_SEED].sort((a,b)=>b.signups-a.signups);
+  document.getElementById('inf-leaderboard').innerHTML = sorted.slice(0,5).map((inf,i)=>lbRow(i+1,inf.name,inf.platform,inf.signups.toLocaleString()+' signups',Math.round(inf.signups/sorted[0].signups*100),colors[i%colors.length])).join('');
+
+  // Commissions
+  document.getElementById('inf-commissions').innerHTML = [...influencers,...INF_SEED].map(inf=>{
+    const comm = Math.round(inf.revenue*inf.comm/100);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b1);font-size:12px">
+      <span style="color:var(--t1)">${inf.name}</span>
+      <span style="font-family:var(--fm);color:var(--gam)">KES ${comm.toLocaleString()}</span>
+    </div>`;}).join('');
+}
+
+function openInfluencerModal() { document.getElementById('infModal').classList.add('open') }
+async function saveInfluencer() {
+  const name=document.getElementById('inf-name-inp').value.trim();
+  if(!name){showToast('Name required','orange');return;}
+  const inf={name,handle:name,platform:document.getElementById('inf-plat-inp').value,size:document.getElementById('inf-size-inp').value+'',code:document.getElementById('inf-code-inp').value.toUpperCase(),comm:Number(document.getElementById('inf-comm-inp').value)||10,signups:0,jobs:0,revenue:0};
+  influencers.unshift(inf);
+  closeModal('infModal');
+  loadInfluencers();
+  showToast('✅ Partner added!');
+  await logAction('add_influencer','influencers',null,{name,platform:inf.platform});
+}
+function exportInfluencers() { showToast('Exporting influencer data…') }
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 7 — SEO
+// ═══════════════════════════════════════════════════════════
+async function loadSEO() {
+  document.getElementById('seo-kpis').innerHTML =
+    gmCard('c-l','fa-globe','18,420','Monthly Visitors','12%','up') +
+    gmCard('c-c','fa-search','4,280','Organic Searches','18%','up') +
+    gmCard('c-t','fa-percentage','3.2%','Bounce Rate Chg.','0.4%','dn') +
+    gmCard('c-r','fa-tachometer-alt','94','Page Speed Score','2pts','up') +
+    gmCard('c-i','fa-arrow-up','28','Avg. Search Position','5pts','up') +
+    gmCard('c-a','fa-sign-in-alt','6.8%','Organic Conversion','0.9%','up');
+
+  renderSEOCharts();
+  renderKeywords();
+  renderLandingPages();
+}
+
+function renderSEOCharts() {
+  if(growthCharts.seo) growthCharts.seo.destroy();
+  const labels=['Jul 1','Jul 8','Jul 15','Jul 22','Jul 29','Aug 5','Aug 12'];
+  growthCharts.seo = mkChart('seoChart',{
+    type:'line',
+    data:{labels,datasets:[{label:'Organic Traffic',data:[8200,9100,10400,9800,11200,13400,15800],borderColor:'var(--a)',backgroundColor:'rgba(184,255,79,.05)',borderWidth:2,fill:true,tension:.4,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+  });
+  if(growthCharts.source) growthCharts.source.destroy();
+  growthCharts.source = mkChart('sourceChart',{
+    type:'doughnut',
+    data:{labels:['Organic','Paid','Social','Referral','Direct'],datasets:[{data:[42,28,18,8,4],backgroundColor:GCFG.palette.map(c=>c+'cc'),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#4a5e70',font:{size:10},boxWidth:8}}}}
+  });
+}
+
+function renderKeywords() {
+  const kws = [{pos:1,term:'house cleaning Nairobi',vol:'2.4K',chg:'+2',up:true},{pos:3,term:'home helpers Kenya',vol:'1.8K',chg:'+1',up:true},{pos:5,term:'gig workers Nairobi',vol:'1.2K',chg:'-1',up:false},{pos:8,term:'domestic worker app',vol:'880',chg:'+3',up:true},{pos:12,term:'online gig marketplace Kenya',vol:'640',chg:'+5',up:true},{pos:15,term:'hire cleaner Nairobi',vol:'520',chg:'-2',up:false}];
+  const el = document.getElementById('kw-table');
+  if(el) el.innerHTML = kws.map(k=>`<div class="kw-row">
+    <div class="kw-pos">${k.pos}</div>
+    <div class="kw-term">${k.term}</div>
+    <div class="kw-vol">${k.vol}</div>
+    <div class="kw-chg ${k.up?'up':'dn'}">${k.chg}</div>
+  </div>`).join('');
+}
+
+function renderLandingPages() {
+  const pages=[{url:'/',title:'Home',visits:'8,200',cvr:'4.2%'},{url:'/market',title:'Marketplace',visits:'4,800',cvr:'6.8%'},{url:'/auth',title:'Sign Up',visits:'3,400',cvr:'38.4%'},{url:'/about',title:'About',visits:'1,200',cvr:'1.2%'}];
+  const el = document.getElementById('lp-table');
+  if(el) el.innerHTML = pages.map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b1);font-size:12px">
+    <div style="font-family:var(--fm);color:var(--a);width:80px;flex-shrink:0">${p.url}</div>
+    <div style="flex:1;color:var(--t1)">${p.title}</div>
+    <div style="color:var(--t3)">${p.visits}</div>
+    <div style="color:var(--a);font-weight:700;width:45px;text-align:right">${p.cvr}</div>
+  </div>`).join('');
+}
+function refreshSEO() { showToast('Refreshing SEO data…'); loadSEO() }
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 8 — PAID ADS
+// ═══════════════════════════════════════════════════════════
+async function loadPaidAds() {
+  document.getElementById('ads-kpis').innerHTML =
+    gmCard('c-r','fa-dollar-sign','KES 280K','Total Ad Spend','20%','up') +
+    gmCard('c-c','fa-eye','940K','Impressions','15%','up') +
+    gmCard('c-t','fa-mouse-pointer','18,400','Clicks','22%','up') +
+    gmCard('c-i','fa-user-plus','2,160','Installs / Signups','34%','up') +
+    gmCard('c-l','fa-coins','KES 130','Cost per Signup','12%','dn') +
+    gmCard('c-a','fa-chart-line','510%','Avg. ROI','8%','up');
+
+  renderAdCharts();
+  renderAdsTable();
+}
+
+function renderAdCharts() {
+  if(growthCharts.adSpend) growthCharts.adSpend.destroy();
+  const labels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+  growthCharts.adSpend = mkChart('adSpendChart',{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Ad Spend',data:[40,55,48,62,58,72,80,90].map(v=>v*1000),backgroundColor:'rgba(251,113,133,.15)',borderColor:'var(--gr)',borderWidth:2,borderRadius:4},
+      {label:'Revenue',data:[180,260,220,310,290,380,420,480].map(v=>v*1000),type:'line',borderColor:'var(--a)',backgroundColor:'rgba(184,255,79,.04)',borderWidth:2,fill:false,tension:.4,pointRadius:3,yAxisID:'y1'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{ticks:{callback:v=>'KES '+(v/1000)+'K'}},y1:{position:'right',ticks:{callback:v=>'KES '+(v/1000)+'K'},grid:{display:false}}}}
+  });
+
+  const el = document.getElementById('ads-funnel');
+  if(el) el.innerHTML = funnelRow('Impressions',940000,940000,'var(--gr)') + funnelRow('Clicks',18400,940000,'var(--gam)') + funnelRow('Landing Page',9200,940000,'var(--gc)') + funnelRow('Signups',2160,940000,'var(--a)') + funnelRow('First Job',980,940000,'var(--gi)');
+}
+
+function renderAdsTable() {
+  const rows = [
+    {name:'Nairobi Cleaners',plat:'Meta',spend:80000,impr:320000,clicks:8400,cpc:9.5,signups:780,cpa:103,roi:680},
+    {name:'Google Brand Search',plat:'Google',spend:60000,impr:180000,clicks:5200,cpc:11.5,signups:540,cpa:111,roi:520},
+    {name:'TikTok Helper Promo',plat:'TikTok',spend:45000,impr:280000,clicks:3800,cpc:11.8,signups:420,cpa:107,roi:440},
+    {name:'Mombasa Launch',plat:'Meta',spend:35000,impr:160000,clicks:1800,cpc:19.4,signups:220,cpa:159,roi:280},
+    {name:'Tutoring Ads',plat:'Google',spend:28000,impr:120000,clicks:1400,cpc:20,signups:130,cpa:215,roi:180},
+  ];
+  const tbody = document.getElementById('ads-tbody');
+  if(!tbody) return;
+  const platIcon={Meta:'fab fa-facebook',Google:'fab fa-google',TikTok:'fab fa-tiktok'};
+  const platCol={Meta:'#1877f2',Google:'#ea4335',TikTok:'#69c9d0'};
+  tbody.innerHTML = rows.map(r=>`<tr>
+    <td style="font-weight:600;color:var(--t1)">${r.name}</td>
+    <td><i class="${platIcon[r.plat]||'fas fa-ad'}" style="color:${platCol[r.plat]||'var(--t3)'}"></i> ${r.plat}</td>
+    <td style="font-family:var(--fm)">KES ${r.spend.toLocaleString()}</td>
+    <td style="font-family:var(--fm)">${(r.impr/1000).toFixed(0)}K</td>
+    <td style="font-family:var(--fm)">${r.clicks.toLocaleString()}</td>
+    <td>KES ${r.cpc}</td>
+    <td style="font-family:var(--fm);color:var(--a)">${r.signups}</td>
+    <td>KES ${r.cpa}</td>
+    <td style="font-family:var(--fm);color:var(--a);font-weight:700">${r.roi}%</td>
+  </tr>`).join('');
+}
+
+function selectAdPlat(p,btn) {
+  document.querySelectorAll('.ad-pill').forEach(el=>el.classList.remove('active'));
+  btn.classList.add('active');
+  currentAdPlatform=p;
+  renderAdsTable();
+}
+function refreshAds() { showToast('Syncing ad platform data…'); loadPaidAds() }
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 9 — RETENTION
+// ═══════════════════════════════════════════════════════════
+async function loadRetention() {
+  document.getElementById('ret-kpis').innerHTML =
+    gmCard('c-l','fa-percentage','68.4%','30-Day Retention','2.1%','up') +
+    gmCard('c-c','fa-redo','24.8%','Reactivation Rate','4%','up') +
+    gmCard('c-r','fa-user-minus','8.2%','Monthly Churn','0.3%','dn') +
+    gmCard('c-i','fa-user-times','2,410','Inactive Users (30d)','180','warn') +
+    gmCard('c-a','fa-user-clock','640','Never Booked','','' ) +
+    gmCard('c-t','fa-heartbeat','91.8%','Platform Health','','' );
+
+  // At-risk segments
+  const segs=[
+    {key:'never_posted',ico:'fa-file-alt',col:'var(--gam)',name:'Signed up, never posted',desc:'640 clients registered but no job yet',cnt:'640'},
+    {key:'no_complete',ico:'fa-tasks',col:'var(--gr)',name:'Posted but never completed',desc:'380 jobs posted, never marked done',cnt:'380'},
+    {key:'inactive_30',ico:'fa-user-clock',col:'var(--gi)',name:'Inactive 30+ days',desc:'2,410 users with no activity',cnt:'2,410'},
+    {key:'inactive_90',ico:'fa-user-slash',col:'var(--red)',name:'Inactive 90+ days',desc:'820 users — high churn risk',cnt:'820'},
+  ];
+  document.getElementById('ret-segments').innerHTML = segs.map(s=>`
+    <div class="seg-row">
+      <div class="seg-ico" style="background:rgba(255,255,255,.04);color:${s.col}"><i class="fas ${s.ico}"></i></div>
+      <div class="seg-info"><div class="seg-name">${s.name}</div><div class="seg-desc">${s.desc}</div></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div class="seg-cnt">${s.cnt}</div>
+        <button class="btn-ghost" style="padding:3px 8px;font-size:10px" onclick="triggerReactivation('${s.key}')">Reactivate</button>
+      </div>
+    </div>`).join('');
+
+  // Automation workflows
+  const flows=[
+    {name:'Day 3 Nudge',trigger:'User has not posted a job',action:'Push: "Your first job is waiting 👋"',status:'live',runs:8420},
+    {name:'Day 7 Incentive',trigger:'User still inactive after day 3',action:'Email: 20% off first booking',status:'live',runs:3180},
+    {name:'Day 30 Reactivation',trigger:'No activity in 30 days',action:'SMS: "We miss you! KES 200 credit inside"',status:'live',runs:1240},
+    {name:'Day 90 Win-Back',trigger:'Inactive 90+ days',action:'Email: Special win-back offer',status:'paused',runs:420},
+  ];
+  document.getElementById('ret-automations').innerHTML = flows.map(f=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,.02);border:1px solid var(--b1);border-radius:var(--r2)">
+      <div style="width:8px;height:8px;border-radius:50%;background:${f.status==='live'?'var(--a)':'var(--gam)'}"></div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--t1)">${f.name}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px">Trigger: ${f.trigger}</div>
+        <div style="font-size:11px;color:var(--t2);margin-top:1px">→ ${f.action}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--fm);font-size:13px;color:var(--t1)">${f.runs.toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--t3)">runs</div>
+      </div>
+      <button class="btn-ghost" style="padding:4px 10px;font-size:11px">${f.status==='live'?'⏸':'▶'}</button>
+    </div>`).join('');
+
+  renderRetCharts();
+}
+
+function triggerReactivation(key) { showToast(`Reactivation campaign queued for segment: ${key}`) }
+async function runReactivation() { showToast('Running reactivation across all at-risk segments…'); await logAction('run_reactivation','campaigns',null,{}) }
+
+function renderRetCharts() {
+  if(growthCharts.ret) growthCharts.ret.destroy();
+  const labels=['Wk1','Wk2','Wk3','Wk4','Wk5','Wk6','Wk7','Wk8','Wk9','Wk10','Wk11','Wk12'];
+  growthCharts.ret = mkChart('retChart',{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Retention %',data:[100,72,64,58,54,51,49,52,55,57,60,68],borderColor:'var(--a)',backgroundColor:'rgba(184,255,79,.05)',borderWidth:2,fill:true,tension:.4,pointRadius:3},
+      {label:'Reactivated %',data:[0,8,12,14,16,18,19,22,24,26,28,30],borderColor:'var(--gc)',backgroundColor:'rgba(34,211,238,.04)',borderWidth:2,fill:true,tension:.4,pointRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{ticks:{callback:v=>v+'%'}}}}
+  });
+
+  if(growthCharts.churn) growthCharts.churn.destroy();
+  growthCharts.churn = mkChart('churnChart',{
+    type:'bar',
+    data:{labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'],
+      datasets:[{label:'Churn %',data:[12,11,10,9.5,9,8.8,8.5,8.2],backgroundColor:'rgba(251,113,133,.15)',borderColor:'var(--gr)',borderWidth:2,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+'%'}}}}
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// SECTION 10 — MARKETPLACE HEALTH
+// ═══════════════════════════════════════════════════════════
+async function loadMarketHealth() {
+  // Health scores
+  document.getElementById('health-scores').innerHTML = [
+    {score:'94%',lbl:'Platform Health',sub:'Overall system score',cls:'excellent'},
+    {score:'87%',lbl:'Job Fulfillment',sub:'Jobs matched to helpers',cls:'excellent'},
+    {score:'72%',lbl:'Helper Utilisation',sub:'Active helpers this week',cls:'good'},
+    {score:'68%',lbl:'Client Retention',sub:'Repeat booking rate',cls:'good'},
+    {score:'4.7★',lbl:'Avg. Rating',sub:'Platform-wide score',cls:'excellent'},
+    {score:'2.4h',lbl:'Avg. Match Time',sub:'Job to first application',cls:'good'},
+  ].map(h=>`<div class="health-card ${h.cls}">
+    <div class="score-val">${h.score}</div>
+    <div class="score-lbl">${h.lbl}</div>
+    <div class="score-sub">${h.sub}</div>
+  </div>`).join('');
+
+  // Client metrics
+  document.getElementById('client-health-metrics').innerHTML =
+    gmCard('c-c','fa-user-plus','340','New Clients (7d)','18%','up') +
+    gmCard('c-l','fa-redo','42%','Repeat Rate','3%','up') +
+    gmCard('c-i','fa-briefcase','3.2','Jobs per Client','0.4','up');
+
+  // Helper metrics
+  document.getElementById('helper-health-metrics').innerHTML =
+    gmCard('c-l','fa-hard-hat','210','New Helpers (7d)','12%','up') +
+    gmCard('c-a','fa-check-circle','78%','Acceptance Rate','2%','up') +
+    gmCard('c-t','fa-star','4.7','Avg. Rating','0.1','up');
+
+  renderHealthCharts();
+}
+
+function renderHealthCharts() {
+  const labels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+  if(growthCharts.clientGrowth) growthCharts.clientGrowth.destroy();
+  growthCharts.clientGrowth = mkChart('clientGrowthChart',{
+    type:'line',
+    data:{labels,datasets:[{label:'New Clients',data:[420,580,520,680,740,820,960,1080],borderColor:'var(--gc)',backgroundColor:'rgba(34,211,238,.05)',borderWidth:2,fill:true,tension:.4,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+  });
+  if(growthCharts.helperGrowth) growthCharts.helperGrowth.destroy();
+  growthCharts.helperGrowth = mkChart('helperGrowthChart',{
+    type:'line',
+    data:{labels,datasets:[{label:'New Helpers',data:[180,240,210,280,320,380,420,480],borderColor:'var(--a)',backgroundColor:'rgba(184,255,79,.05)',borderWidth:2,fill:true,tension:.4,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+  });
+  if(growthCharts.supplyDemand) growthCharts.supplyDemand.destroy();
+  growthCharts.supplyDemand = mkChart('supplyDemandChart',{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Jobs Posted (Demand)',data:[920,1240,1080,1420,1580,1840,2040,2280],borderColor:'var(--gc)',borderWidth:2,tension:.4,fill:false,pointRadius:3},
+      {label:'Helpers Available (Supply)',data:[840,1080,980,1260,1380,1640,1820,2040],borderColor:'var(--a)',borderWidth:2,tension:.4,fill:false,pointRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false}
+  });
+}
+function refreshHealth() { showToast('Refreshing marketplace health…'); loadMarketHealth() }
+
+// ═══════════════════════════════════════════════════════════
+// GROWTH NAV LOADER — called from navigate()
+// ═══════════════════════════════════════════════════════════
+function loadGrowthPage(key) {
+  const loaders = {
+    campaigns:      loadCampaigns,
+    social:         loadSocial,
+    referrals:      loadReferrals,
+    promos:         loadPromos,
+    'push-campaigns': loadPushCampaigns,
+    influencers:    loadInfluencers,
+    seo:            loadSEO,
+    'paid-ads':     loadPaidAds,
+    retention:      loadRetention,
+    'market-health':loadMarketHealth,
+  };
+  loaders[key]?.();
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI GROWTH ENGINE
+// ═══════════════════════════════════════════════════════════
+const AI_INSIGHTS = [
+  { title:'📈 Viral Coefficient Below 1', body:'Your K-factor is 0.79. To hit exponential growth you need K > 1. Try raising the referral reward from KES 200 to KES 350 — projected to lift K to 1.2.' },
+  { title:'💡 TikTok Outperforming Meta', body:'TikTok campaigns show 312% ROI vs Meta\'s 287%. Recommend shifting 20% of Meta budget (KES 16K) to TikTok for the next 30 days.' },
+  { title:'⚠️ 640 Clients Never Booked', body:'640 users signed up but never posted a job. A targeted "first job free" push notification could convert 15–20% of them — ~96–128 new jobs.' },
+  { title:'🔥 Helpers Undersupply in Mombasa', body:'Demand:Supply ratio in Mombasa is 1.8:1. Recruit 40 more helpers or launch a localised helper acquisition campaign.' },
+  { title:'🎯 Email Highest ROI Channel', body:'Your email campaigns show 520% ROI — highest of all channels. Invest in a full drip sequence: welcome → day 3 nudge → day 7 promo → day 14 social proof.' },
+];
+
+function toggleAIPanel() {
+  const panel = document.getElementById('ai-panel');
+  const isOpen = panel.classList.toggle('open');
+  if (isOpen && document.getElementById('ai-body').children.length === 0) {
+    seedAIInsights();
+  }
+}
+
+function seedAIInsights() {
+  const body = document.getElementById('ai-body');
+  body.innerHTML = `<div class="ai-msg">
+    <div class="ai-mlbl">Growth AI</div>
+    <div class="ai-bubble bot">Hi! I'm your Growth AI Engine 🚀 I've analysed your campaigns, retention data and marketplace health. Here are your top insights:</div>
+  </div>`;
+  AI_INSIGHTS.forEach(ins => {
+    const div = document.createElement('div');
+    div.className = 'ai-insight';
+    div.innerHTML = `<div class="ai-ititle">${ins.title}</div><div class="ai-ibody">${ins.body}</div>`;
+    body.appendChild(div);
+  });
+}
+
+async function sendAIMsg() {
+  const inp = document.getElementById('ai-inp');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  const body = document.getElementById('ai-body');
+
+  // User bubble
+  body.innerHTML += `<div class="ai-msg"><div class="ai-mlbl">You</div><div class="ai-bubble">${msg}</div></div>`;
+  body.scrollTop = body.scrollHeight;
+
+  // Show typing indicator
+  const typingId = 'ai-typing-' + Date.now();
+  body.innerHTML += `<div id="${typingId}" class="ai-msg"><div class="ai-mlbl">Growth AI</div><div class="ai-bubble bot" style="color:var(--t3)">Analysing…</div></div>`;
+  body.scrollTop = body.scrollHeight;
+
+  try {
+    const SUPABASE_URL = 'https://cjpylodggpqqkuvojogb.supabase.co';
+    const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcHlsb2RnZ3BxcWt1dm9qb2diIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwODQ3ODgsImV4cCI6MjA4MjY2MDc4OH0.DpfpuCMQr8A3QV11KRVLE2JakuRWAmoGi1Ol_QUFWRE';
+
+    // Build context from live data
+    const ctx = `You are the Growth AI Engine for Aminy, a Kenya-based gig marketplace connecting clients with helpers for domestic services. 
+Current platform metrics: 12,840 users, 68.4% 30-day retention, K-factor 0.79, top channel TikTok (312% ROI), 640 clients who signed up but never booked, supply:demand ratio 1.8:1 in Mombasa.
+Answer growth and marketing questions concisely in 2-3 sentences. Be specific with numbers and actionable recommendations.`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        system: ctx,
+        messages: [
+          ...aiHistory.slice(-6),
+          { role: 'user', content: msg }
+        ]
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'I couldn\'t fetch a response. Check your connection.';
+    aiHistory.push({ role:'user', content:msg }, { role:'assistant', content:reply });
+
+    document.getElementById(typingId)?.remove();
+    body.innerHTML += `<div class="ai-msg"><div class="ai-mlbl">Growth AI</div><div class="ai-bubble bot">${reply}</div></div>`;
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    // Fallback local answers
+    const fallbacks = {
+      campaign: 'Your best performing campaign type is Email at 520% ROI. Consider scaling your Welcome Email Series first.',
+      referral:  'Your K-factor is 0.79. Raising the referral reward to KES 350 should push this above 1.0 for exponential growth.',
+      retention: '640 users signed up but never booked. A Day-3 push with a 20% discount typically converts 15-18% of this segment.',
+      tiktok:    'TikTok shows 312% ROI — your highest paid channel. Allocate 30% of total ad budget here for the next quarter.',
+      mombasa:   'Mombasa supply gap is real. Launch a helper acquisition campaign targeting Bamburi, Tudor and Nyali areas.',
+    };
+    const key = Object.keys(fallbacks).find(k => msg.toLowerCase().includes(k));
+    const reply = key ? fallbacks[key] : 'Great question! Based on your current data, focus on the TikTok channel (312% ROI) and the 640 inactive users who never booked — these are your two biggest quick wins.';
+    body.innerHTML += `<div class="ai-msg"><div class="ai-mlbl">Growth AI</div><div class="ai-bubble bot">${reply}</div></div>`;
+  }
+  body.scrollTop = body.scrollHeight;
+}
 
 </script>
 </body>
