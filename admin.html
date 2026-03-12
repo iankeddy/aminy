@@ -12,19 +12,27 @@
   <script>if(typeof supabase==='undefined'){document.write('<scr'+'ipt src="https://unpkg.com/@supabase/supabase-js@2"><\/scr'+'ipt>')}</script>
   <!-- Global JS error handler: ALWAYS shows auth gate instead of frozen spinner -->
   <script>
+    // onerror: only show auth gate if we're still on the loading screen (pre-boot)
+    // Once the dashboard is open, errors are handled per-function with try/catch
     window.onerror = function(msg, src, line) {
-      var l=document.getElementById('page-loader'), g=document.getElementById('auth-gate'), e=document.getElementById('auth-error');
-      if(l) l.style.display='none';
-      if(g && g.style.display!=='flex') { g.style.display='flex'; }
-      if(e && !e.textContent) { e.textContent='JS error: '+msg+(line?' (line '+line+')':''); e.style.display='block'; }
+      var l=document.getElementById('page-loader');
+      // If page-loader is still showing, we're pre-boot — show auth gate
+      if(l && getComputedStyle(l).display !== 'none') {
+        var g=document.getElementById('auth-gate'), e=document.getElementById('auth-error');
+        l.style.display='none';
+        if(g) g.style.display='flex';
+        if(e && !e.textContent) { e.textContent='JS error: '+msg+(line?' (line '+line+')':''); e.style.display='block'; }
+      }
+      // If dashboard already loaded, just log — never show auth gate
       return false;
     };
     window.addEventListener('unhandledrejection', function(ev) {
       var l=document.getElementById('page-loader');
-      var g=document.getElementById('auth-gate');
-      if(l && l.style.display!=='none' && getComputedStyle(l).display!=='none') {
-        if(l) l.style.display='none';
-        if(g) { g.style.display='flex'; }
+      // Only act if spinner is still showing (pre-boot network error)
+      if(l && getComputedStyle(l).display !== 'none') {
+        var g=document.getElementById('auth-gate');
+        l.style.display='none';
+        if(g) g.style.display='flex';
       }
     });
   </script>
@@ -3524,6 +3532,8 @@ function campStatusChip(s) {
 }
 
 function renderCampaignCards(list) {
+  try {
+
   const el = document.getElementById('camp-cards');
   if (!el) return;
   if (!list.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📣</div><h4>No campaigns yet</h4><p>Create your first campaign to start growing.</p></div>'; return; }
@@ -3553,6 +3563,7 @@ function renderCampaignCards(list) {
       </div>
     </div>`;
   }).join('');
+  } catch(_e) { console.warn("renderCampaignCards:", _e.message); }
 }
 
 function filterCamps(type, btn) {
@@ -3563,6 +3574,8 @@ function filterCamps(type, btn) {
 }
 
 function renderCampFunnel() {
+  try {
+
   const el = document.getElementById('camp-funnel');
   if (!el) return;
   const reach=284000, clicks=9240, signups=1847, jobs=932;
@@ -3570,9 +3583,12 @@ function renderCampFunnel() {
     funnelRow('Clicks', clicks, reach, 'var(--gc)') +
     funnelRow('Signups', signups, reach, 'var(--gi)') +
     funnelRow('Jobs Posted', jobs, reach, 'var(--gam)');
+  } catch(_e) { console.warn("renderCampFunnel:", _e.message); }
 }
 
 function renderROIChart() {
+  try {
+
   if (growthCharts.roi) growthCharts.roi.destroy();
   growthCharts.roi = mkChart('roiChart', {
     type:'bar',
@@ -3581,6 +3597,7 @@ function renderROIChart() {
     },
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>v+'%'}}} }
   });
+  } catch(_e) { console.warn("renderROIChart:", _e.message); }
 }
 
 function openCampModal() { document.getElementById('campModal').classList.add('open') }
@@ -3625,6 +3642,8 @@ const PLATFORMS = [
   {id:'yt',  name:'YouTube',   icon:'fab fa-youtube',  cls:'p-yt', followers:'980'},
 ];
 async function loadSocial() {
+  try {
+
   // Platform cards
   document.getElementById('plat-cards').innerHTML = PLATFORMS.map(p => `
     <div class="plat-card">
@@ -3635,9 +3654,12 @@ async function loadSocial() {
     </div>`).join('');
   buildCalendar();
   renderMediaLibrary();
+  } catch(_e) { console.warn("loadSocial:", _e.message); }
 }
 
 function buildCalendar() {
+  try {
+
   const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const hdr = document.getElementById('cal-header');
   const body = document.getElementById('cal-body');
@@ -3665,9 +3687,12 @@ function buildCalendar() {
   }
   body.innerHTML = html;
   renderSocialCharts();
+  } catch(_e) { console.warn("buildCalendar:", _e.message); }
 }
 
 function renderSocialCharts() {
+  try {
+
   if (growthCharts.social) growthCharts.social.destroy();
   const labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   growthCharts.social = mkChart('socialChart',{
@@ -3695,6 +3720,7 @@ function renderSocialCharts() {
     const vals=[0.2,0.5,0.8,0.4,0.9,0.3,0.7, 0.6,0.8,0.4,0.9,0.7,0.5,0.8, 0.3,0.7,0.6,0.8,0.5,0.9,0.6, 0.8,0.4,0.7,0.6,0.9,0.7,0.8];
     hm.innerHTML = vals.map(v=>`<div style="height:28px;border-radius:4px;background:rgba(184,255,79,${v});cursor:pointer" title="${Math.round(v*100)}% engagement"></div>`).join('');
   }
+  } catch(_e) { console.warn("renderSocialCharts:", _e.message); }
 }
 
 function socialTab(tab, btn) {
@@ -3707,11 +3733,14 @@ function socialTab(tab, btn) {
 }
 
 function renderMediaLibrary() {
+  try {
+
   const el = document.getElementById('media-library-grid');
   if(!el) return;
   const colors=['#b8ff4f22','#22d3ee22','#fb718522','#818cf822','#fbbf2422','#2dd4bf22','#c084fc22','#b8ff4f22'];
   el.innerHTML = colors.map((c,i)=>`<div style="height:70px;background:${c};border-radius:8px;border:1px solid var(--b1);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer">${['🖼','📸','🎥','📊','🎨','📱','💻','🌟'][i]}</div>`).join('') +
     `<div style="height:70px;background:rgba(255,255,255,.02);border:1px dashed var(--b2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;color:var(--t3)">+</div>`;
+  } catch(_e) { console.warn("renderMediaLibrary:", _e.message); }
 }
 function openPostModal() { showToast('Post scheduler — connect your social accounts first','orange') }
 function openHashtagManager() { showToast('Hashtag manager — coming soon','orange') }
@@ -3817,10 +3846,13 @@ function setPromoType(t,btn) {
 }
 
 function genPromoCode() {
+  try {
+
   const w = PROMO_WORDS[Math.floor(Math.random()*PROMO_WORDS.length)];
   const n = Math.floor(Math.random()*90)+10;
   const val = document.getElementById('promo-value')?.value || '20';
   document.getElementById('promo-preview').textContent = `${w}${val}${promoType==='pct'?'OFF':'KES'}`;
+  } catch(_e) { console.warn("genPromoCode:", _e.message); }
 }
 
 function copyPromo() {
@@ -3846,6 +3878,8 @@ async function savePromoCode() {
 }
 
 function renderPromoTable() {
+  try {
+
   const seed = [{code:'AMINY20OFF',type:'pct',value:20,limit:500,used:312,expiry:'2025-09-30',status:'active'},{code:'NAIROBI100KES',type:'fix',value:100,limit:200,used:198,expiry:'2025-08-31',status:'active'},{code:'NEWUSER50OFF',type:'pct',value:50,limit:1000,used:847,expiry:'2025-12-31',status:'active'},{code:'LAUNCH200KES',type:'fix',value:200,limit:100,used:100,expiry:'2025-07-31',status:'ended'}];
   const all = [...promos, ...seed];
   const tbody = document.getElementById('promo-tbody');
@@ -3860,16 +3894,20 @@ function renderPromoTable() {
     <td>${p.status==='active'?'<span class="chip chip-live">Active</span>':'<span class="chip chip-ended">Ended</span>'}</td>
     <td><button class="btn-ghost" style="padding:3px 8px;font-size:10px" onclick="deactivatePromo('${p.code}')">Deactivate</button></td>
   </tr>`).join('');
+  } catch(_e) { console.warn("renderPromoTable:", _e.message); }
 }
 function deactivatePromo(code) { showToast(`Code ${code} deactivated`,'orange') }
 
 function renderPromoChart() {
+  try {
+
   if(growthCharts.promo) growthCharts.promo.destroy();
   growthCharts.promo = mkChart('promoChart',{
     type:'bar',
     data:{labels:['Wk1','Wk2','Wk3','Wk4'],datasets:[{label:'Redemptions',data:[420,680,540,780],backgroundColor:'rgba(251,191,36,.15)',borderColor:'var(--gam)',borderWidth:2,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
   });
+  } catch(_e) { console.warn("renderPromoChart:", _e.message); }
 }
 function openPromoModal() { showToast('Create code using the generator on the left','orange') }
 
@@ -3952,11 +3990,14 @@ async function loadPushCampaigns() {
 }
 
 function selectTemplate(i) {
+  try {
+
   document.querySelectorAll('.tpl-card').forEach(c=>c.classList.remove('sel'));
   document.getElementById('tpl-'+i).classList.add('sel');
   const t = PUSH_TEMPLATES[i];
   document.getElementById('pc-title').value = t.title;
   document.getElementById('pc-body').value = t.body;
+  } catch(_e) { console.warn("selectTemplate:", _e.message); }
 }
 
 async function sendPushCampaign() {
@@ -4006,6 +4047,8 @@ async function sendPushCampaign() {
 }
 
 function renderPushChart() {
+  try {
+
   if(growthCharts.push) growthCharts.push.destroy();
   growthCharts.push = mkChart('pushChart',{
     type:'bar',
@@ -4013,6 +4056,7 @@ function renderPushChart() {
       datasets:[{data:[12840,8782,3094,1143],backgroundColor:[GCFG.palette[0]+'22',GCFG.palette[1]+'22',GCFG.palette[2]+'22',GCFG.palette[3]+'22'],borderColor:GCFG.palette,borderWidth:2,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
   });
+  } catch(_e) { console.warn("renderPushChart:", _e.message); }
 }
 function openPushCampModal() { document.getElementById('pc-title').focus() }
 
@@ -4095,6 +4139,8 @@ function exportInfluencers() { showToast('Exporting influencer data…') }
 // SECTION 7 — SEO
 // ═══════════════════════════════════════════════════════════
 async function loadSEO() {
+  try {
+
   document.getElementById('seo-kpis').innerHTML =
     gmCard('c-l','fa-globe','18,420','Monthly Visitors','12%','up') +
     gmCard('c-c','fa-search','4,280','Organic Searches','18%','up') +
@@ -4106,9 +4152,12 @@ async function loadSEO() {
   renderSEOCharts();
   renderKeywords();
   renderLandingPages();
+  } catch(_e) { console.warn("loadSEO:", _e.message); }
 }
 
 function renderSEOCharts() {
+  try {
+
   if(growthCharts.seo) growthCharts.seo.destroy();
   const labels=['Jul 1','Jul 8','Jul 15','Jul 22','Jul 29','Aug 5','Aug 12'];
   growthCharts.seo = mkChart('seoChart',{
@@ -4122,9 +4171,12 @@ function renderSEOCharts() {
     data:{labels:['Organic','Paid','Social','Referral','Direct'],datasets:[{data:[42,28,18,8,4],backgroundColor:GCFG.palette.map(c=>c+'cc'),borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#4a5e70',font:{size:10},boxWidth:8}}}}
   });
+  } catch(_e) { console.warn("renderSEOCharts:", _e.message); }
 }
 
 function renderKeywords() {
+  try {
+
   const kws = [{pos:1,term:'house cleaning Nairobi',vol:'2.4K',chg:'+2',up:true},{pos:3,term:'home helpers Kenya',vol:'1.8K',chg:'+1',up:true},{pos:5,term:'gig workers Nairobi',vol:'1.2K',chg:'-1',up:false},{pos:8,term:'domestic worker app',vol:'880',chg:'+3',up:true},{pos:12,term:'online gig marketplace Kenya',vol:'640',chg:'+5',up:true},{pos:15,term:'hire cleaner Nairobi',vol:'520',chg:'-2',up:false}];
   const el = document.getElementById('kw-table');
   if(el) el.innerHTML = kws.map(k=>`<div class="kw-row">
@@ -4133,9 +4185,12 @@ function renderKeywords() {
     <div class="kw-vol">${k.vol}</div>
     <div class="kw-chg ${k.up?'up':'dn'}">${k.chg}</div>
   </div>`).join('');
+  } catch(_e) { console.warn("renderKeywords:", _e.message); }
 }
 
 function renderLandingPages() {
+  try {
+
   const pages=[{url:'/',title:'Home',visits:'8,200',cvr:'4.2%'},{url:'/market',title:'Marketplace',visits:'4,800',cvr:'6.8%'},{url:'/auth',title:'Sign Up',visits:'3,400',cvr:'38.4%'},{url:'/about',title:'About',visits:'1,200',cvr:'1.2%'}];
   const el = document.getElementById('lp-table');
   if(el) el.innerHTML = pages.map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b1);font-size:12px">
@@ -4144,13 +4199,19 @@ function renderLandingPages() {
     <div style="color:var(--t3)">${p.visits}</div>
     <div style="color:var(--a);font-weight:700;width:45px;text-align:right">${p.cvr}</div>
   </div>`).join('');
+  } catch(_e) { console.warn("renderLandingPages:", _e.message); }
 }
-function refreshSEO() { showToast('Refreshing SEO data…'); loadSEO() }
+function refreshSEO() {
+  try {
+ showToast('Refreshing SEO data…'); loadSEO()   } catch(_e) { console.warn("refreshSEO:", _e.message); }
+}
 
 // ═══════════════════════════════════════════════════════════
 // SECTION 8 — PAID ADS
 // ═══════════════════════════════════════════════════════════
 async function loadPaidAds() {
+  try {
+
   document.getElementById('ads-kpis').innerHTML =
     gmCard('c-r','fa-dollar-sign','KES 280K','Total Ad Spend','20%','up') +
     gmCard('c-c','fa-eye','940K','Impressions','15%','up') +
@@ -4161,9 +4222,12 @@ async function loadPaidAds() {
 
   renderAdCharts();
   renderAdsTable();
+  } catch(_e) { console.warn("loadPaidAds:", _e.message); }
 }
 
 function renderAdCharts() {
+  try {
+
   if(growthCharts.adSpend) growthCharts.adSpend.destroy();
   const labels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
   growthCharts.adSpend = mkChart('adSpendChart',{
@@ -4177,9 +4241,12 @@ function renderAdCharts() {
 
   const el = document.getElementById('ads-funnel');
   if(el) el.innerHTML = funnelRow('Impressions',940000,940000,'var(--gr)') + funnelRow('Clicks',18400,940000,'var(--gam)') + funnelRow('Landing Page',9200,940000,'var(--gc)') + funnelRow('Signups',2160,940000,'var(--a)') + funnelRow('First Job',980,940000,'var(--gi)');
+  } catch(_e) { console.warn("renderAdCharts:", _e.message); }
 }
 
 function renderAdsTable() {
+  try {
+
   const rows = [
     {name:'Nairobi Cleaners',plat:'Meta',spend:80000,impr:320000,clicks:8400,cpc:9.5,signups:780,cpa:103,roi:680},
     {name:'Google Brand Search',plat:'Google',spend:60000,impr:180000,clicks:5200,cpc:11.5,signups:540,cpa:111,roi:520},
@@ -4202,6 +4269,7 @@ function renderAdsTable() {
     <td>KES ${r.cpa}</td>
     <td style="font-family:var(--fm);color:var(--a);font-weight:700">${r.roi}%</td>
   </tr>`).join('');
+  } catch(_e) { console.warn("renderAdsTable:", _e.message); }
 }
 
 function selectAdPlat(p,btn) {
@@ -4308,10 +4376,15 @@ async function loadRetention() {
   renderRetCharts();
 }
 
-function triggerReactivation(key) { showToast(`Reactivation campaign queued for segment: ${key}`) }
+function triggerReactivation(key) {
+  try {
+ showToast(`Reactivation campaign queued for segment: ${key}`)   } catch(_e) { console.warn("triggerReactivation:", _e.message); }
+}
 async function runReactivation() { showToast('Running reactivation across all at-risk segments…'); await logAction('run_reactivation','campaigns',null,{}) }
 
 function renderRetCharts() {
+  try {
+
   if(growthCharts.ret) growthCharts.ret.destroy();
   const labels=['Wk1','Wk2','Wk3','Wk4','Wk5','Wk6','Wk7','Wk8','Wk9','Wk10','Wk11','Wk12'];
   growthCharts.ret = mkChart('retChart',{
@@ -4330,6 +4403,7 @@ function renderRetCharts() {
       datasets:[{label:'Churn %',data:[12,11,10,9.5,9,8.8,8.5,8.2],backgroundColor:'rgba(251,113,133,.15)',borderColor:'var(--gr)',borderWidth:2,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+'%'}}}}
   });
+  } catch(_e) { console.warn("renderRetCharts:", _e.message); }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4413,6 +4487,8 @@ async function loadMarketHealth() {
 }
 
 function renderHealthCharts() {
+  try {
+
   const labels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
   if(growthCharts.clientGrowth) growthCharts.clientGrowth.destroy();
   growthCharts.clientGrowth = mkChart('clientGrowthChart',{
@@ -4435,6 +4511,7 @@ function renderHealthCharts() {
     ]},
     options:{responsive:true,maintainAspectRatio:false}
   });
+  } catch(_e) { console.warn("renderHealthCharts:", _e.message); }
 }
 function refreshHealth() { showToast('Refreshing marketplace health…'); loadMarketHealth() }
 
