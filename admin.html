@@ -7,13 +7,33 @@
 <meta name="theme-color" content="#b8ff4f">
 <link rel="icon" type="image/png" href="images/icon-192.png">
 <title>Aminy Admin</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-</script>
+<!-- Supabase JS: primary CDN, fallback to unpkg if jsdelivr fails -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>if(typeof supabase==='undefined'){document.write('<scr'+'ipt src="https://unpkg.com/@supabase/supabase-js@2"><\/scr'+'ipt>')}</script>
+  <!-- Global JS error handler: ALWAYS shows auth gate instead of frozen spinner -->
+  <script>
+    window.onerror = function(msg, src, line) {
+      var l=document.getElementById('page-loader'), g=document.getElementById('auth-gate'), e=document.getElementById('auth-error');
+      if(l) l.style.display='none';
+      if(g && g.style.display!=='flex') { g.style.display='flex'; }
+      if(e && !e.textContent) { e.textContent='JS error: '+msg+(line?' (line '+line+')':''); e.style.display='block'; }
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function(ev) {
+      var l=document.getElementById('page-loader');
+      var g=document.getElementById('auth-gate');
+      if(l && l.style.display!=='none' && getComputedStyle(l).display!=='none') {
+        if(l) l.style.display='none';
+        if(g) { g.style.display='flex'; }
+      }
+    });
+  </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script>if(typeof Chart==='undefined'){document.write('<scr'+'ipt src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/scr'+'ipt>')}</script>
 <style>
 /* ═══════════════════════════════════════════════════════════════════
    AMINY ADMIN  ·  Glass SaaS Control Center
@@ -2138,9 +2158,20 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 // ── SUPABASE ─────────────────────────────────────────────────
 const supabaseUrl = 'https://cjpylodggpqqkuvojogb.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcHlsb2RnZ3BxcWt1dm9qb2diIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwODQ3ODgsImV4cCI6MjA4MjY2MDc4OH0.DpfpuCMQr8A3QV11KRVLE2JakuRWAmoGi1Ol_QUFWRE';
-const db = supabase.createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
-});
+let db;
+try {
+  if (typeof supabase === 'undefined') throw new Error('Supabase CDN failed to load. Try refreshing.');
+  db = supabase.createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  });
+} catch(_dbErr) {
+  // Show auth gate with error — window.onerror will also fire
+  document.addEventListener('DOMContentLoaded', function() {
+    var l=document.getElementById('page-loader'), g=document.getElementById('auth-gate'), e=document.getElementById('auth-error');
+    if(l) l.style.display='none'; if(g) g.style.display='flex';
+    if(e) { e.textContent='Connection error — '+_dbErr.message; e.style.display='block'; }
+  });
+}
 
 // ── RBAC SYSTEM ───────────────────────────────────────────────
 const ROLE_LABELS = {
@@ -2357,7 +2388,7 @@ async function updatePassword() {
 }
 
 // ── BOOT ──────────────────────────────────────────────────────
-async async function bootDashboard() {
+async function bootDashboard() {
   // ── Identity ───────────────────────────────────────────────
   try {
     adminRole = getAdminRole(currentUser);
@@ -2411,16 +2442,27 @@ function showAuthGate(msg) {
 }
 
 // Hard failsafe: if spinner is still visible after 5s, show auth gate
-setTimeout(() => {
-  const loader = document.getElementById('page-loader');
-  if (loader && getComputedStyle(loader).display !== 'none') {
-    console.warn('Admin: 5s boot timeout — showing auth gate');
-    showAuthGate('Taking longer than expected. Please sign in or refresh.');
-  }
-}, 5000);
+// Absolute failsafe: if spinner still showing after 8s, force auth form
+// (self-contained — no dependency on any app function)
+setTimeout(function() {
+  try {
+    var l=document.getElementById('page-loader');
+    var g=document.getElementById('auth-gate');
+    var e=document.getElementById('auth-error');
+    if (l && getComputedStyle(l).display !== 'none') {
+      l.style.display = 'none';
+      if (g) g.style.display = 'flex';
+      if (e && !e.textContent) {
+        e.textContent = 'Loading timed out. Check your connection and try again.';
+        e.style.display = 'block';
+      }
+    }
+  } catch(te) { console.warn('Timeout handler error:', te); }
+}, 8000);
 
 // Single clean boot — runs once on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', async () => {
+  if (!db) return; // CDN failed — catch block above registered fallback handler
   try {
     // Merge both profile fetches into one query
     const { data: { session }, error: sErr } = await db.auth.getSession();
