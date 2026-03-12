@@ -51,23 +51,23 @@
   --teal:      #34d399;   --teal-dim:   rgba(52,211,153,0.10);
 
   /* Canvas */
-  --bg:        #f0faf0;
-  --bg2:       #e8f5e8;
-  --bg3:       #ddeedd;
-  --card:      rgba(255,255,255,0.75);
-  --card-solid:#ffffff;
-  --glass:     rgba(240,250,240,0.80);
+  --bg:        #070809;
+  --bg2:       #0d1117;
+  --bg3:       #111920;
+  --card:      rgba(14,18,24,0.72);
+  --card-solid:#0e1218;
+  --glass:     rgba(15,18,21,0.65);
   --lift:      rgba(255,255,255,0.025);
 
   /* Borders */
-  --b1: rgba(0,80,0,0.08);
-  --b2: rgba(0,80,0,0.13);
-  --b3: rgba(0,80,0,0.20);
+  --b1: rgba(255,255,255,0.06);
+  --b2: rgba(255,255,255,0.10);
+  --b3: rgba(255,255,255,0.16);
 
   /* Text */
-  --t1: #0d1f0d;
-  --t2: #3a5a3a;
-  --t3: #6a9a6a;
+  --t1: #f0f6ff;
+  --t2: #8094a8;
+  --t3: #4a5e70;
 
   /* Layout */
   --sb:  240px;
@@ -123,11 +123,24 @@ a { text-decoration:none; color:inherit }
 /* ── AUTH GATE ──────────────────────────────────────────────────── */
 #auth-gate {
   position: fixed; inset: 0; z-index: 9999;
-  display: flex; align-items: center; justify-content: center;
+  display: none; align-items: center; justify-content: center;
   padding: 24px;
   background: var(--bg);
   overflow: hidden;
 }
+/* Page loader shown while session check runs */
+#page-loader {
+  position: fixed; inset: 0; z-index: 9998;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+.loader-ring {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 3px solid var(--b2);
+  border-top-color: var(--a);
+  animation: loaderSpin .8s linear infinite;
+}
+@keyframes loaderSpin { to { transform: rotate(360deg) } }
 
 /* Ambient orbs */
 #auth-gate::before {
@@ -1207,6 +1220,9 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 <body>
 
 <!-- AUTH GATE -->
+<!-- PAGE LOADER -->
+<div id="page-loader"><div class="loader-ring"></div></div>
+
 <div id="auth-gate">
   <div class="auth-wrap">
     <div class="auth-eyebrow">
@@ -2359,6 +2375,8 @@ async async function bootDashboard() {
   buildSidebar(adminRole);
 
   // Hide auth gate
+  const _loader = document.getElementById('page-loader');
+  if (_loader) _loader.style.display = 'none';
   document.getElementById('auth-gate').style.display='none';
 
   // Navigate to overview
@@ -2371,8 +2389,18 @@ async async function bootDashboard() {
 
 // ── SESSION CHECK ─────────────────────────────────────────────
 let _adminBooted = false;
+function showAuthGate(msg) {
+  const loader = document.getElementById('page-loader');
+  const gate   = document.getElementById('auth-gate');
+  if (loader) loader.style.display = 'none';
+  if (gate)   gate.style.display   = 'flex';
+  if (msg) {
+    const err = document.getElementById('auth-error');
+    if (err) { err.textContent = msg; err.style.display = 'block'; }
+  }
+}
 window.addEventListener('load', async () => {
-  if (_adminBooted) return;   // guard: prevent double-init (service worker replay, etc.)
+  if (_adminBooted) return;  // guard: prevent double-init (service worker replay)
   _adminBooted = true;
   try {
     const { data: { session } } = await db.auth.getSession();
@@ -2387,16 +2415,19 @@ window.addEventListener('load', async () => {
           adminRole2 = rd2?.admin_role || null;
         } catch(e) {}
         currentUser = { ...session.user, ...profile, admin_role: adminRole2 };
-        await bootDashboard();   // await so errors are caught below
+        await bootDashboard();
         return;
       }
+      // Logged in but not admin
+      await db.auth.signOut();
+      showAuthGate('This account does not have admin access.');
+      return;
     }
-    // Not logged in or not admin — show auth gate
-    document.getElementById('auth-gate').style.display = 'flex';
+    // No session — show login
+    showAuthGate();
   } catch(e) {
-    // Surface auth errors gracefully — never let them become unhandled rejections
     console.error('Admin init error:', e);
-    document.getElementById('auth-gate').style.display = 'flex';
+    showAuthGate('Initialisation error: ' + e.message);
   }
 });
 
