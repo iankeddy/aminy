@@ -2313,7 +2313,8 @@ async function doLogin() {
     try { const { data: rd } = await db.from('profiles').select('admin_role').eq('id',data.user.id).maybeSingle(); adminRole = rd?.admin_role || null; } catch(e) {}
     currentUser = { ...data.user, ...profile, admin_role: adminRole };
     await logAction('login', 'auth', currentUser.id, { email: currentUser.email });
-    bootDashboard();
+    _adminBooted = false;   // reset guard so bootDashboard can run from login
+    await bootDashboard();
   } catch(e) {
     err.textContent=e.message; err.style.display='block';
     btn.disabled=false; btn.textContent='Sign In';
@@ -2338,7 +2339,7 @@ async function updatePassword() {
 }
 
 // ── BOOT ──────────────────────────────────────────────────────
-async function bootDashboard() {
+async async function bootDashboard() {
   adminRole = getAdminRole(currentUser);
   const n = currentUser.full_name || currentUser.email || 'Admin';
   const initials2 = initials(n);
@@ -2369,18 +2370,33 @@ async function bootDashboard() {
 }
 
 // ── SESSION CHECK ─────────────────────────────────────────────
+let _adminBooted = false;
 window.addEventListener('load', async () => {
-  const { data: { session } } = await db.auth.getSession();
-  if(session) {
-    const { data: profile } = await db.from('profiles').select('role,full_name').eq('id',session.user.id).maybeSingle();
-    if(profile && profile.role==='admin') {
-      // Fetch admin_role separately — graceful if column doesn't exist yet
-      let adminRole2 = null;
-      try { const { data: rd2 } = await db.from('profiles').select('admin_role').eq('id',session.user.id).maybeSingle(); adminRole2 = rd2?.admin_role || null; } catch(e) {}
-      currentUser = { ...session.user, ...profile, admin_role: adminRole2 };
-      bootDashboard();
-      return;
+  if (_adminBooted) return;   // guard: prevent double-init (service worker replay, etc.)
+  _adminBooted = true;
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (session) {
+      const { data: profile } = await db.from('profiles')
+        .select('role,full_name').eq('id', session.user.id).maybeSingle();
+      if (profile && profile.role === 'admin') {
+        let adminRole2 = null;
+        try {
+          const { data: rd2 } = await db.from('profiles')
+            .select('admin_role').eq('id', session.user.id).maybeSingle();
+          adminRole2 = rd2?.admin_role || null;
+        } catch(e) {}
+        currentUser = { ...session.user, ...profile, admin_role: adminRole2 };
+        await bootDashboard();   // await so errors are caught below
+        return;
+      }
     }
+    // Not logged in or not admin — show auth gate
+    document.getElementById('auth-gate').style.display = 'flex';
+  } catch(e) {
+    // Surface auth errors gracefully — never let them become unhandled rejections
+    console.error('Admin init error:', e);
+    document.getElementById('auth-gate').style.display = 'flex';
   }
 });
 
