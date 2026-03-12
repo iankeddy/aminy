@@ -2139,7 +2139,7 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 const supabaseUrl = 'https://cjpylodggpqqkuvojogb.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcHlsb2RnZ3BxcWt1dm9qb2diIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwODQ3ODgsImV4cCI6MjA4MjY2MDc4OH0.DpfpuCMQr8A3QV11KRVLE2JakuRWAmoGi1Ol_QUFWRE';
 const db = supabase.createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
 });
 
 // ── RBAC SYSTEM ───────────────────────────────────────────────
@@ -2236,6 +2236,7 @@ function buildSidebar(role) {
 
 // ── STATE ─────────────────────────────────────────────────────
 let allHelpers = [], allClients = [], allJobs = [], allBookings = [];
+let campaigns = [], promos = [], influencers = [], aiHistory = [];
 let currentUser = null, adminRole = 'super_admin';
 let chartsInit = false;
 const notifHistory = [];
@@ -2329,7 +2330,6 @@ async function doLogin() {
     try { const { data: rd } = await db.from('profiles').select('admin_role').eq('id',data.user.id).maybeSingle(); adminRole = rd?.admin_role || null; } catch(e) {}
     currentUser = { ...data.user, ...profile, admin_role: adminRole };
     await logAction('login', 'auth', currentUser.id, { email: currentUser.email });
-    _adminBooted = false;   // reset guard so bootDashboard can run from login
     await bootDashboard();
   } catch(e) {
     err.textContent=e.message; err.style.display='block';
@@ -2340,8 +2340,10 @@ document.getElementById('auth-password').addEventListener('keydown', e=>{ if(e.k
 document.getElementById('auth-email').addEventListener('keydown',    e=>{ if(e.key==='Enter') doLogin(); });
 
 async function doLogout() {
-  await logAction('logout', 'auth', currentUser?.id);
-  await db.auth.signOut();
+  try {
+    await logAction('logout', 'auth', currentUser?.id);
+    await db.auth.signOut();
+  } catch(e) { console.warn('logout:', e.message); }
   location.reload();
 }
 
@@ -2356,39 +2358,47 @@ async function updatePassword() {
 
 // ── BOOT ──────────────────────────────────────────────────────
 async async function bootDashboard() {
-  adminRole = getAdminRole(currentUser);
-  const n = currentUser.full_name || currentUser.email || 'Admin';
-  const initials2 = initials(n);
-  const roleLabel = ROLE_LABELS[adminRole] || 'Admin';
+  // ── Identity ───────────────────────────────────────────────
+  try {
+    adminRole = getAdminRole(currentUser);
+    const n = currentUser.full_name || currentUser.email || 'Admin';
+    const initials2 = initials(n);
+    const roleLabel = ROLE_LABELS[adminRole] || 'Admin';
+    const set = (id, prop, val) => { const el=document.getElementById(id); if(el) el[prop]=val; };
+    set('sb-name',              'textContent', n.split(' ')[0]);
+    set('sb-avatar',            'textContent', initials2);
+    set('sb-role-badge',        'textContent', roleLabel);
+    const badge = document.getElementById('sb-role-badge');
+    if(badge) badge.className = `sb-role-badge ${ROLE_BADGE_CLASS[adminRole]||'super'}`;
+    set('tb-avatar',            'textContent', initials2);
+    set('tb-name',              'textContent', n.split(' ')[0]);
+    set('settings-email',       'value',       currentUser.email || '');
+    set('settings-role-display','value',       roleLabel);
+  } catch(e) { console.warn('bootDashboard identity:', e.message); }
 
-  // UI identity
-  document.getElementById('sb-name').textContent = n.split(' ')[0];
-  document.getElementById('sb-avatar').textContent = initials2;
-  document.getElementById('sb-role-badge').textContent = roleLabel;
-  document.getElementById('sb-role-badge').className = `sb-role-badge ${ROLE_BADGE_CLASS[adminRole]||'super'}`;
-  document.getElementById('tb-avatar').textContent = initials2;
-  document.getElementById('tb-name').textContent = n.split(' ')[0];
-  document.getElementById('settings-email').value = currentUser.email || '';
-  document.getElementById('settings-role-display').value = roleLabel;
+  // ── Sidebar ─────────────────────────────────────────────────
+  try { buildSidebar(adminRole); } catch(e) { console.warn('buildSidebar:', e.message); }
 
-  // Build sidebar for this role
-  buildSidebar(adminRole);
-
-  // Hide auth gate
+  // ── Show dashboard, hide loader & auth gate ──────────────────
   const _loader = document.getElementById('page-loader');
   if (_loader) _loader.style.display = 'none';
-  document.getElementById('auth-gate').style.display='none';
+  const _gate = document.getElementById('auth-gate');
+  if (_gate) _gate.style.display = 'none';
 
-  // Navigate to overview
-  navigate('overview');
+  // ── Navigate ─────────────────────────────────────────────────
+  try { navigate('overview'); } catch(e) { console.warn('navigate overview:', e.message); }
 
-  // Load all data in parallel
-  await Promise.all([loadOverview(), loadVettingQueue(), loadHelpers(), loadClients(), loadJobs(), loadBookings()]);
-  initCharts();
+  // ── Load data — allSettled so one failure never blocks others ─
+  await Promise.allSettled([
+    loadOverview(), loadVettingQueue(),
+    loadHelpers(), loadClients(), loadJobs(), loadBookings()
+  ]);
+
+  // ── Charts ───────────────────────────────────────────────────
+  try { initCharts(); } catch(e) { console.warn('initCharts:', e.message); }
 }
 
-// ── SESSION CHECK ─────────────────────────────────────────────
-let _adminBooted = false;
+// ── SESSION CHECK & BOOT ─────────────────────────────────────
 function showAuthGate(msg) {
   const loader = document.getElementById('page-loader');
   const gate   = document.getElementById('auth-gate');
@@ -2399,37 +2409,46 @@ function showAuthGate(msg) {
     if (err) { err.textContent = msg; err.style.display = 'block'; }
   }
 }
-window.addEventListener('load', async () => {
-  if (_adminBooted) return;  // guard: prevent double-init (service worker replay)
-  _adminBooted = true;
+
+// Hard failsafe: if spinner is still visible after 5s, show auth gate
+setTimeout(() => {
+  const loader = document.getElementById('page-loader');
+  if (loader && getComputedStyle(loader).display !== 'none') {
+    console.warn('Admin: 5s boot timeout — showing auth gate');
+    showAuthGate('Taking longer than expected. Please sign in or refresh.');
+  }
+}, 5000);
+
+// Single clean boot — runs once on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const { data: { session } } = await db.auth.getSession();
-    if (session) {
-      const { data: profile } = await db.from('profiles')
-        .select('role,full_name').eq('id', session.user.id).maybeSingle();
-      if (profile && profile.role === 'admin') {
-        let adminRole2 = null;
-        try {
-          const { data: rd2 } = await db.from('profiles')
-            .select('admin_role').eq('id', session.user.id).maybeSingle();
-          adminRole2 = rd2?.admin_role || null;
-        } catch(e) {}
-        currentUser = { ...session.user, ...profile, admin_role: adminRole2 };
-        await bootDashboard();
-        return;
-      }
-      // Logged in but not admin
-      await db.auth.signOut();
-      showAuthGate('This account does not have admin access.');
+    // Merge both profile fetches into one query
+    const { data: { session }, error: sErr } = await db.auth.getSession();
+    if (sErr) throw sErr;
+    if (!session) { showAuthGate(); return; }
+
+    const { data: profile, error: pErr } = await db.from('profiles')
+      .select('role,full_name,admin_role')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
+    if (pErr) throw pErr;
+    if (!profile || profile.role !== 'admin') {
+      try { await db.auth.signOut(); } catch(e) {}
+      showAuthGate(profile
+        ? 'Access denied — role "' + profile.role + '" is not admin.'
+        : 'No profile found. Add role=admin in Supabase profiles table.');
       return;
     }
-    // No session — show login
-    showAuthGate();
+
+    currentUser = { ...session.user, ...profile };
+    await bootDashboard();
   } catch(e) {
-    console.error('Admin init error:', e);
-    showAuthGate('Initialisation error: ' + e.message);
+    console.error('Admin boot error:', e);
+    showAuthGate('Error: ' + (e.message || 'Unknown. Check console.'));
   }
 });
+
 
 // ── OVERVIEW ──────────────────────────────────────────────────
 async function loadOverview() {
@@ -2577,42 +2596,60 @@ async function loadVettingQueue() {
 }
 
 async function approveHelper(id, name='') {
-  const { error } = await db.from('profiles').update({ is_vetted: true, rejection_feedback: null }).eq('id', id);
-  if(error) { showToast('Error: '+error.message,'red'); return; }
-  document.getElementById(`vcard-${id}`)?.remove();
-  showToast('✅ Helper approved!');
-  await logAction('approve_helper','profiles',id,{helper_name:name});
-  if(!document.querySelector('.vq-card')) {
-    document.getElementById('queue-container').innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><h4>Queue cleared!</h4></div>`;
+  try {
+    const { error } = await db.from('profiles').update({ is_vetted: true, rejection_feedback: null }).eq('id', id);
+    if(error) { showToast('Error: '+error.message,'red'); return; }
+    document.getElementById(`vcard-${id}`)?.remove();
+    showToast('✅ Helper approved!');
+    await logAction('approve_helper','profiles',id,{helper_name:name});
+    if(!document.querySelector('.vq-card')) {
+      document.getElementById('queue-container').innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><h4>Queue cleared!</h4></div>`;
+    }
+    loadOverview(); updateVettingBadge();
+
+  } catch(e) {
+    showToast(e.message || 'Operation failed', 'red');
+    console.error('approveHelper:', e);
   }
-  loadOverview(); updateVettingBadge();
 }
 
 async function rejectHelper(id, name='') {
-  const feedback = document.getElementById(`feedback-${id}`)?.value?.trim();
-  if(!feedback) { showToast('Please provide a rejection reason','orange'); return; }
-  const { error } = await db.from('profiles').update({ is_vetted: false, rejection_feedback: feedback }).eq('id', id);
-  if(error) { showToast('Error: '+error.message,'red'); return; }
-  document.getElementById(`vcard-${id}`)?.remove();
-  showToast('Helper application rejected.','orange');
-  await logAction('reject_helper','profiles',id,{helper_name:name,reason:feedback});
-  if(!document.querySelector('.vq-card')) {
-    document.getElementById('queue-container').innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><h4>Queue cleared!</h4></div>`;
+  try {
+    const feedback = document.getElementById(`feedback-${id}`)?.value?.trim();
+    if(!feedback) { showToast('Please provide a rejection reason','orange'); return; }
+    const { error } = await db.from('profiles').update({ is_vetted: false, rejection_feedback: feedback }).eq('id', id);
+    if(error) { showToast('Error: '+error.message,'red'); return; }
+    document.getElementById(`vcard-${id}`)?.remove();
+    showToast('Helper application rejected.','orange');
+    await logAction('reject_helper','profiles',id,{helper_name:name,reason:feedback});
+    if(!document.querySelector('.vq-card')) {
+      document.getElementById('queue-container').innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><h4>Queue cleared!</h4></div>`;
+    }
+    updateVettingBadge();
+
+  } catch(e) {
+    showToast(e.message || 'Operation failed', 'red');
+    console.error('rejectHelper:', e);
   }
-  updateVettingBadge();
 }
 
 async function updateVettingBadge() {
-  const { count } = await db.from('profiles').select('*',{count:'exact',head:true}).eq('role','helper').eq('is_vetted',false);
-  const el = document.getElementById('vetting-badge');
-  if(el) el.textContent = count||0;
-  document.getElementById('notifCount').textContent = count||0;
+  try {
+    const { count } = await db.from('profiles').select('*',{count:'exact',head:true}).eq('role','helper').eq('is_vetted',false);
+    const el = document.getElementById('vetting-badge');
+    if(el) el.textContent = count||0;
+    const nc = document.getElementById('notifCount');
+    if(nc) nc.textContent = count||0;
+  } catch(e) { console.warn('updateVettingBadge:', e.message); }
 }
 
 // ── HELPERS TABLE ─────────────────────────────────────────────
 async function loadHelpers() {
-  const { data, error } = await db.from('profiles').select('*').eq('role','helper').order('created_at',{ascending:false});
-  allHelpers = data||[];
+  try {
+    const { data, error } = await db.from('profiles').select('*').eq('role','helper').order('created_at',{ascending:false});
+    if(error) throw error;
+    allHelpers = data||[];
+  } catch(e) { console.warn('loadHelpers:', e.message); allHelpers = []; }
   renderHelpers(allHelpers);
 }
 
@@ -2659,13 +2696,19 @@ function renderHelpers(helpers) {
 
 async function approveFromTable(id, name) { await approveHelper(id, name); loadHelpers(); }
 async function suspendHelper(id, name='') {
-  const reason = prompt('Reason for suspension:');
-  if(!reason) return;
-  const { error } = await db.from('profiles').update({ is_vetted: false, rejection_feedback: reason }).eq('id',id);
-  if(error) { showToast(error.message,'red'); return; }
-  showToast('Helper suspended','orange');
-  await logAction('suspend_helper','profiles',id,{helper_name:name,reason});
-  loadHelpers(); loadOverview();
+  try {
+    const reason = prompt('Reason for suspension:');
+    if(!reason) return;
+    const { error } = await db.from('profiles').update({ is_vetted: false, rejection_feedback: reason }).eq('id',id);
+    if(error) { showToast(error.message,'red'); return; }
+    showToast('Helper suspended','orange');
+    await logAction('suspend_helper','profiles',id,{helper_name:name,reason});
+    loadHelpers(); loadOverview();
+
+  } catch(e) {
+    showToast(e.message || 'Operation failed', 'red');
+    console.error('suspendHelper:', e);
+  }
 }
 
 // ── HELPER MODAL ──────────────────────────────────────────────
@@ -2703,8 +2746,11 @@ async function openHelperModal(id) {
 
 // ── CLIENTS TABLE ─────────────────────────────────────────────
 async function loadClients() {
-  const { data } = await db.from('profiles').select('*').eq('role','client').order('created_at',{ascending:false});
-  allClients = data||[];
+  try {
+    const { data, error } = await db.from('profiles').select('*').eq('role','client').order('created_at',{ascending:false});
+    if(error) throw error;
+    allClients = data||[];
+  } catch(e) { console.warn('loadClients:', e.message); allClients = []; }
   renderClients(allClients);
 }
 
@@ -2745,26 +2791,41 @@ function renderClients(clients) {
 }
 
 async function suspendClient(id, name='') {
-  const reason = prompt('Reason for suspension:');
-  if(!reason) return;
-  const { error } = await db.from('profiles').update({ rejection_feedback: reason }).eq('id',id);
-  if(error) { showToast(error.message,'red'); return; }
-  showToast('Client suspended','orange');
-  await logAction('suspend_client','profiles',id,{client_name:name,reason});
-  loadClients();
+  try {
+    const reason = prompt('Reason for suspension:');
+    if(!reason) return;
+    const { error } = await db.from('profiles').update({ rejection_feedback: reason }).eq('id',id);
+    if(error) { showToast(error.message,'red'); return; }
+    showToast('Client suspended','orange');
+    await logAction('suspend_client','profiles',id,{client_name:name,reason});
+    loadClients();
+
+  } catch(e) {
+    showToast(e.message || 'Operation failed', 'red');
+    console.error('suspendClient:', e);
+  }
 }
 async function reactivateClient(id, name='') {
-  const { error } = await db.from('profiles').update({ rejection_feedback: null }).eq('id',id);
-  if(error) { showToast(error.message,'red'); return; }
-  showToast('Client reactivated!');
-  await logAction('reactivate_client','profiles',id,{client_name:name});
-  loadClients();
+  try {
+    const { error } = await db.from('profiles').update({ rejection_feedback: null }).eq('id',id);
+    if(error) { showToast(error.message,'red'); return; }
+    showToast('Client reactivated!');
+    await logAction('reactivate_client','profiles',id,{client_name:name});
+    loadClients();
+
+  } catch(e) {
+    showToast(e.message || 'Operation failed', 'red');
+    console.error('reactivateClient:', e);
+  }
 }
 
 // ── JOBS TABLE ────────────────────────────────────────────────
 async function loadJobs() {
-  const { data } = await db.from('jobs').select('*').order('created_at',{ascending:false});
-  allJobs = data||[];
+  try {
+    const { data, error } = await db.from('jobs').select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    allJobs = data||[];
+  } catch(e) { console.warn('loadJobs:', e.message); allJobs = []; }
   renderJobMetrics(); renderJobs(allJobs);
 }
 function renderJobMetrics() {
@@ -2802,8 +2863,11 @@ function renderJobs(jobs) {
 
 // ── APPLICATIONS ──────────────────────────────────────────────
 async function loadBookings() {
-  const { data } = await db.from('bookings').select('*').order('created_at',{ascending:false});
-  allBookings = data||[];
+  try {
+    const { data, error } = await db.from('bookings').select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    allBookings = data||[];
+  } catch(e) { console.warn('loadBookings:', e.message); allBookings = []; }
   renderPayments(); renderApps(allBookings); renderAppMetrics();
 }
 function renderAppMetrics() {
@@ -2865,30 +2929,42 @@ function renderPayments() {
 
 // ── REVIEWS ───────────────────────────────────────────────────
 async function loadReviews() {
-  const container = document.getElementById('reviews-list');
-  if(!container) return;
-  const { data } = await db.from('reviews').select('*').order('created_at',{ascending:false}).limit(30);
-  if(!data?.length){ container.innerHTML=`<div class="empty-state"><div class="empty-icon">⭐</div><h4>No reviews yet</h4></div>`; return; }
-  container.innerHTML = data.map(r=>`
-    <div style="display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-light)">
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-          <div style="font-weight:700;font-size:13px">${r.helper_id?.slice(0,8)||'Helper'}…</div>
-          <div>${stars(r.rating||0)}</div>
-          <div class="td-muted" style="margin-left:auto">${timeAgo(r.created_at)}</div>
+  try {
+    const container = document.getElementById('reviews-list');
+    if(!container) return;
+    const { data } = await db.from('reviews').select('*').order('created_at',{ascending:false}).limit(30);
+    if(!data?.length){ container.innerHTML=`<div class="empty-state"><div class="empty-icon">⭐</div><h4>No reviews yet</h4></div>`; return; }
+    container.innerHTML = data.map(r=>`
+      <div style="display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-light)">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <div style="font-weight:700;font-size:13px">${r.helper_id?.slice(0,8)||'Helper'}…</div>
+            <div>${stars(r.rating||0)}</div>
+            <div class="td-muted" style="margin-left:auto">${timeAgo(r.created_at)}</div>
+          </div>
+          <div style="font-size:13px;color:var(--grey-600);line-height:1.5">${r.comment||'<em style="color:var(--grey-400)">No comment</em>'}</div>
         </div>
-        <div style="font-size:13px;color:var(--grey-600);line-height:1.5">${r.comment||'<em style="color:var(--grey-400)">No comment</em>'}</div>
-      </div>
-      ${canAccess(adminRole,'reviews')?`<button class="btn btn-danger btn-sm btn-icon" onclick="deleteReview('${r.id}')" title="Remove"><i class="fas fa-trash"></i></button>`:''}
-    </div>`).join('');
+        ${canAccess(adminRole,'reviews')?`<button class="btn btn-danger btn-sm btn-icon" onclick="deleteReview('${r.id}')" title="Remove"><i class="fas fa-trash"></i></button>`:''}
+      </div>`).join('');
+
+  } catch(e) {
+    showToast(e.message || 'Operation failed', 'red');
+    console.error('loadReviews:', e);
+  }
 }
 async function deleteReview(id) {
-  if(!confirm('Remove this review? This cannot be undone.')) return;
-  const { error } = await db.from('reviews').delete().eq('id',id);
-  if(error) { showToast(error.message,'red'); return; }
-  showToast('Review removed','orange');
-  await logAction('delete_review','reviews',id);
-  loadReviews();
+  try {
+    if(!confirm('Remove this review? This cannot be undone.')) return;
+    const { error } = await db.from('reviews').delete().eq('id',id);
+    if(error) { showToast(error.message,'red'); return; }
+    showToast('Review removed','orange');
+    await logAction('delete_review','reviews',id);
+    loadReviews();
+
+  } catch(e) {
+    showToast(e.message || 'Operation failed', 'red');
+    console.error('deleteReview:', e);
+  }
 }
 
 // ── BADGES PAGE ───────────────────────────────────────────────
@@ -3110,21 +3186,27 @@ async function loadActivityLog() {
 
 // ── ADMIN MANAGEMENT ──────────────────────────────────────────
 async function loadAdminAccounts() {
-  const el = document.getElementById('admin-accounts-list');
-  if(!el) return;
-  const { data } = await db.from('profiles').select('id,full_name,email,admin_role,created_at').eq('role','admin').order('created_at',{ascending:false});
-  if(!data?.length){ el.innerHTML='<div class="td-muted">No other admin accounts found.</div>'; return; }
-  el.innerHTML = data.map(a=>`
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-light)">
-      <div class="user-avatar" style="background:${colorFor(a.full_name)};color:white">${initials(a.full_name)}</div>
-      <div style="flex:1">
-        <div class="user-name">${a.full_name||'Admin'}</div>
-        <div class="user-email">${a.email||''}</div>
-      </div>
-      <span class="sb-role-badge ${ROLE_BADGE_CLASS[a.admin_role||'super_admin']||'super'}" style="font-size:10px;padding:3px 8px;border-radius:20px">
-        ${ROLE_LABELS[a.admin_role||'super_admin']||'Super Admin'}
-      </span>
-    </div>`).join('');
+  try {
+    const el = document.getElementById('admin-accounts-list');
+    if(!el) return;
+    const { data } = await db.from('profiles').select('id,full_name,email,admin_role,created_at').eq('role','admin').order('created_at',{ascending:false});
+    if(!data?.length){ el.innerHTML='<div class="td-muted">No other admin accounts found.</div>'; return; }
+    el.innerHTML = data.map(a=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-light)">
+        <div class="user-avatar" style="background:${colorFor(a.full_name)};color:white">${initials(a.full_name)}</div>
+        <div style="flex:1">
+          <div class="user-name">${a.full_name||'Admin'}</div>
+          <div class="user-email">${a.email||''}</div>
+        </div>
+        <span class="sb-role-badge ${ROLE_BADGE_CLASS[a.admin_role||'super_admin']||'super'}" style="font-size:10px;padding:3px 8px;border-radius:20px">
+          ${ROLE_LABELS[a.admin_role||'super_admin']||'Super Admin'}
+        </span>
+      </div>`).join('');
+
+  } catch(e) {
+    showToast(e.message || 'Operation failed', 'red');
+    console.error('loadAdminAccounts:', e);
+  }
 }
 
 function openCreateAdminModal() {
@@ -3308,7 +3390,6 @@ function mkChart(id, cfg) {
 
 // ── GROWTH SHARED STATE ─────────────────────────────────────
 let growthCharts = {};
-let campaigns = [], promos = [], influencers = [], aiHistory = [];
 let currentAdPlatform = 'all';
 let promoType = 'pct';
 let selectedTemplate = null;
