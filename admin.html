@@ -502,8 +502,8 @@ a { text-decoration:none; color:inherit }
 
 /* ── CONTENT ────────────────────────────────────────────────────── */
 .content { flex:1; padding: 24px 28px }
-.page { display:none; animation: pgIn 0.22s ease both }
-.page.active { display:block }
+.page { display:none; }
+.page.active { display:block; animation: pgIn 0.18s ease forwards }
 @keyframes pgIn {
   from { opacity:0; transform:translateY(8px) }
   to   { opacity:1; transform:none }
@@ -818,7 +818,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03) }
 .rating-val { font-weight:700; color:var(--t1); font-size:12px; font-family:var(--fm) }
 
 /* Chart */
-.chart-wrap { position:relative; height: 198px }
+.chart-wrap { position:relative; overflow:hidden }
 
 /* Progress */
 .progress-bar { height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden }
@@ -1601,7 +1601,7 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
       </div>
       <div class="panel-card">
         <div class="panel-title"><i class="fas fa-chart-line"></i> ROI by Channel</div>
-        <canvas id="roiChart" height="180"></canvas>
+        <div class="chart-wrap" style="height:180px"><canvas id="roiChart"></canvas></div></canvas>
       </div>
     </div>
   </div>
@@ -1634,7 +1634,7 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
       <div class="g2">
         <div class="panel-card">
           <div class="panel-title"><i class="fas fa-chart-area"></i> Reach &amp; Impressions (7d)</div>
-          <canvas id="socialChart" height="180"></canvas>
+          <div class="chart-wrap" style="height:180px"><canvas id="socialChart"></canvas></div></canvas>
         </div>
         <div class="panel-card">
           <div class="panel-title"><i class="fas fa-fire"></i> Top Posts</div>
@@ -1762,7 +1762,7 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
       <!-- Chart -->
       <div class="panel-card">
         <div class="panel-title"><i class="fas fa-chart-bar"></i> Redemptions This Month</div>
-        <canvas id="promoChart" height="200"></canvas>
+        <div class="chart-wrap" style="height:200px"><canvas id="promoChart"></canvas></div></canvas>
       </div>
     </div>
     <!-- Codes table -->
@@ -1834,7 +1834,7 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
     <!-- Campaign performance -->
     <div class="panel-card">
       <div class="panel-title"><i class="fas fa-chart-bar"></i> Campaign Performance</div>
-      <canvas id="pushChart" height="180"></canvas>
+      <div class="chart-wrap" style="height:180px"><canvas id="pushChart"></canvas></div></canvas>
     </div>
   </div>
 
@@ -1876,11 +1876,11 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
     <div class="g2" style="margin-bottom:14px">
       <div class="panel-card">
         <div class="panel-title"><i class="fas fa-chart-area"></i> Organic Traffic (30d)</div>
-        <canvas id="seoChart" height="180"></canvas>
+        <div class="chart-wrap" style="height:180px"><canvas id="seoChart"></canvas></div></canvas>
       </div>
       <div class="panel-card">
         <div class="panel-title"><i class="fas fa-pie-chart"></i> Traffic Sources</div>
-        <canvas id="sourceChart" height="180"></canvas>
+        <div class="chart-wrap" style="height:180px"><canvas id="sourceChart"></canvas></div></canvas>
       </div>
     </div>
     <div class="g2">
@@ -1915,7 +1915,7 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
     <div class="g2" style="margin-bottom:14px">
       <div class="panel-card">
         <div class="panel-title"><i class="fas fa-chart-bar"></i> Ad Spend vs Revenue</div>
-        <canvas id="adSpendChart" height="180"></canvas>
+        <div class="chart-wrap" style="height:180px"><canvas id="adSpendChart"></canvas></div></canvas>
       </div>
       <div class="panel-card">
         <div class="panel-title"><i class="fas fa-funnel-dollar"></i> Conversion Funnel</div>
@@ -1946,7 +1946,7 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
     <div class="g2" style="margin-bottom:14px">
       <div class="panel-card">
         <div class="panel-title"><i class="fas fa-chart-line"></i> Retention Rate (12 weeks)</div>
-        <canvas id="retChart" height="180"></canvas>
+        <div class="chart-wrap" style="height:180px"><canvas id="retChart"></canvas></div></canvas>
       </div>
       <div class="panel-card">
         <div class="panel-title"><i class="fas fa-users-slash"></i> At-Risk Segments</div>
@@ -1960,7 +1960,7 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
     </div>
     <div class="panel-card">
       <div class="panel-title"><i class="fas fa-chart-bar"></i> Churn by Cohort</div>
-      <canvas id="churnChart" height="160"></canvas>
+      <div class="chart-wrap" style="height:160px"><canvas id="churnChart"></canvas></div></canvas>
     </div>
   </div>
 
@@ -1980,18 +1980,18 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
       <div class="panel-card">
         <div class="panel-title" style="color:var(--gc)"><i class="fas fa-user-tie"></i> Client Metrics</div>
         <div class="gm-grid" style="margin-top:14px" id="client-health-metrics"></div>
-        <canvas id="clientGrowthChart" height="160"></canvas>
+        <div class="chart-wrap" style="height:160px"><canvas id="clientGrowthChart"></canvas></div></canvas>
       </div>
       <div class="panel-card">
         <div class="panel-title" style="color:var(--a)"><i class="fas fa-user-check"></i> Helper Metrics</div>
         <div class="gm-grid" style="margin-top:14px" id="helper-health-metrics"></div>
-        <canvas id="helperGrowthChart" height="160"></canvas>
+        <div class="chart-wrap" style="height:160px"><canvas id="helperGrowthChart"></canvas></div></canvas>
       </div>
     </div>
     <!-- Supply/demand -->
     <div class="panel-card">
       <div class="panel-title"><i class="fas fa-balance-scale"></i> Supply vs Demand Balance</div>
-      <canvas id="supplyDemandChart" height="160" style="margin-top:10px"></canvas>
+      <div class="chart-wrap" style="height:160px"><canvas id="supplyDemandChart"></canvas></div></canvas>
     </div>
   </div>
 
