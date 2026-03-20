@@ -40,40 +40,14 @@ function initials(name) {
 
 
 // ── EMPTY STATE HELPER ───────────────────────────────────────
-// Generates a consistent, friendly empty state card for any dashboard section.
-// icon    = Font Awesome class e.g. 'fa-bell'
-// title   = Bold headline
-// message = Subtitle / guidance text
-// action  = Optional { label, onclick } for a CTA button
-function emptyStateHTML(icon, title, message, action = null) {
-  return `
-    <div style="
-      text-align:center; padding:28px 16px;
-      background:var(--surface,#f5f7f5); border-radius:14px;
-      border:1.5px dashed var(--border,#dfe6df);
-    ">
-      <div style="
-        width:52px; height:52px; border-radius:50%;
-        background:var(--green-light,#e8f7e8);
-        display:flex; align-items:center; justify-content:center;
-        margin:0 auto 12px; font-size:22px; color:var(--green,#3db83a);
-      ">
-        <i class="fas ${icon}"></i>
-      </div>
-      <div style="font-family:var(--font-display,'Outfit',sans-serif);font-weight:800;font-size:15px;color:var(--text,#111811);margin-bottom:5px">
-        ${title}
-      </div>
-      <div style="font-size:13px;color:var(--text-muted,#8a9a8a);line-height:1.5;max-width:220px;margin:0 auto">
-        ${message}
-      </div>
-      ${action ? `
-        <button onclick="${action.onclick}"
-          style="margin-top:14px;background:var(--green,#3db83a);color:white;border:none;
-          border-radius:30px;padding:9px 22px;font-size:13px;font-weight:700;
-          cursor:pointer;font-family:inherit">
-          ${action.label}
-        </button>` : ''}
-    </div>`;
+function emptyStateHTML(icon, title, message, action) {
+  const btn = action ? `<button onclick="${action.onclick}" style="margin-top:14px;background:var(--green,#3db83a);color:white;border:none;border-radius:30px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">${action.label}</button>` : '';
+  return `<div style="text-align:center;padding:28px 16px;background:var(--surface,#f5f7f5);border-radius:14px;border:1.5px dashed var(--border,#dfe6df)">
+    <div style="width:52px;height:52px;border-radius:50%;background:var(--green-light,#e8f7e8);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:22px;color:var(--green,#3db83a)"><i class="fas ${icon}"></i></div>
+    <div style="font-family:var(--font-display,'Outfit',sans-serif);font-weight:800;font-size:15px;color:var(--text,#111811);margin-bottom:5px">${title}</div>
+    <div style="font-size:13px;color:var(--text-muted,#8a9a8a);line-height:1.5;max-width:220px;margin:0 auto">${message}</div>
+    ${btn}
+  </div>`;
 }
 
 // ── INJECT GLOBAL STYLES ─────────────────────────────────────
@@ -448,12 +422,7 @@ async function loadClientApplicants() {
     if (error) throw error;
 
     if (!bookings || bookings.length === 0) {
-      container.innerHTML = emptyStateHTML(
-        'fa-inbox',
-        'No Applications Yet',
-        'When helpers apply for your jobs, they will appear here. Post a job to get started.',
-        { label: '📋 Post a Job', onclick: "document.getElementById('job-title')?.focus()" }
-      );
+      container.innerHTML = emptyStateHTML('fa-inbox','No Applications Yet','When helpers apply for your jobs, they will appear here.',{label:'Post a Job',onclick:"document.getElementById('job-title')?.focus()"});
       return;
     }
 
@@ -530,12 +499,7 @@ async function loadClientBookings() {
     if (error) throw error;
 
     if (!bookings || bookings.length === 0) {
-      container.innerHTML = emptyStateHTML(
-        'fa-calendar-check',
-        'No Hired Helpers Yet',
-        'Once you hire a helper for a job, they will show up here with their status.',
-        { label: '🛒 Browse Marketplace', onclick: "goToPage('market.html')" }
-      );
+      container.innerHTML = emptyStateHTML('fa-calendar-check','No Hired Helpers Yet','Once you hire a helper, they will show up here with their payment status.',{label:'Browse Marketplace',onclick:"goToPage('market.html')"});
       return;
     }
 
@@ -555,8 +519,24 @@ async function loadClientBookings() {
       const status = b.status || 'pending';
       const alreadyRated = reviewedMap[b.id];
 
-      const statusLabel = { pending: 'Pending', accepted: 'Hired ✓', completed: 'Completed' }[status] || status;
+            const statusLabel = { pending: 'Awaiting Payment', accepted: 'Active', completed: 'Completed' }[status] || status;
       const statusClass = { pending: 'status-pending', accepted: 'status-accepted', completed: 'status-completed' }[status] || '';
+      const safeHN = encodeURIComponent(helper.full_name || '');
+      const safeJT = encodeURIComponent(job.title || '');
+      const safeJB = encodeURIComponent(job.budget || '');
+
+      let actionBtn = '';
+      if (alreadyRated) {
+        actionBtn = '<div class="booking-rated">' + renderStarsHTML(alreadyRated, 12) + ' Rated</div>';
+      } else if (status === 'completed') {
+        actionBtn = '<div class="booking-rated" style="color:#3b82f6"><i class="fas fa-check-circle"></i> Done</div>';
+      } else if (status === 'pending') {
+        actionBtn = '<button class="btn-complete-rate" style="background:#3db83a" onclick="openPayModal(\'' + b.id + '\',\'' + (helper.id||'') + '\',decodeURIComponent(\'' + safeHN + '\'),decodeURIComponent(\'' + safeJT + '\'),decodeURIComponent(\'' + safeJB + '\'))"><i class="fas fa-lock"></i> Pay via M-Pesa</button>';
+      } else if (status === 'accepted') {
+        actionBtn = '<button class="btn-complete-rate" onclick="confirmAndRelease(\'' + b.id + '\',\'' + (helper.id||'') + '\',decodeURIComponent(\'' + safeHN + '\'),decodeURIComponent(\'' + safeJT + '\'))"><i class="fas fa-star"></i> Complete & Rate</button>';
+      } else {
+        actionBtn = '<div style="font-size:11px;color:#8a9a8a">Awaiting payment</div>';
+      }
 
       return `
         <div class="booking-card" id="booking-${b.id}">
@@ -568,19 +548,10 @@ async function loadClientBookings() {
             </div>
             <div class="booking-status-chip ${statusClass}">${statusLabel}</div>
           </div>
-          ${job.title ? `<div class="booking-job-title">📌 ${job.title}${job.budget ? ` · ${job.budget}` : ''}</div>` : ''}
+          ${job.title ? '<div class="booking-job-title">Job: ' + job.title + (job.budget ? ' - ' + job.budget : '') + '</div>' : ''}
           <div class="booking-footer">
             <div class="booking-date">${timeAgoShort(b.created_at)}</div>
-            ${alreadyRated
-              ? `<div class="booking-rated">${renderStarsHTML(alreadyRated, 12)} Rated</div>`
-              : status === 'accepted'
-                ? `<button class="btn-complete-rate" onclick="openRatingModal('${b.id}','${helper.id}','${(helper.full_name||'').replace(/'/g,"\\'")}','${(job.title||'').replace(/'/g,"\\'")}')">
-                    <i class="fas fa-star"></i> Complete & Rate
-                  </button>`
-                : status === 'completed'
-                  ? `<div class="booking-rated" style="color:#3b82f6"><i class="fas fa-check-circle"></i> Done</div>`
-                  : `<div style="font-size:11px;color:#8a9a8a">Awaiting acceptance</div>`
-            }
+            ${actionBtn}
           </div>
         </div>`;
     }).join('');
@@ -615,12 +586,7 @@ async function loadHelperRequests() {
     if (error) throw error;
 
     if (!bookings || bookings.length === 0) {
-      container.innerHTML = emptyStateHTML(
-        'fa-bell',
-        'No Job Requests Yet',
-        'When a client selects you for a job, the request will appear here.',
-        { label: '🔍 Browse Open Jobs', onclick: "goToPage('market.html?mode=jobs')" }
-      );
+      container.innerHTML = emptyStateHTML('fa-bell','No Job Requests Yet','When a client selects you for a job, the request will appear here.',{label:'Browse Open Jobs',onclick:"goToPage('market.html?mode=jobs')"});
       return;
     }
 
@@ -673,12 +639,7 @@ async function loadHelperActiveJobs() {
     if (error) throw error;
 
     if (!bookings || bookings.length === 0) {
-      container.innerHTML = emptyStateHTML(
-        'fa-briefcase',
-        'No Active Jobs',
-        'Jobs you have been hired for will appear here. Apply on the Marketplace to get started.',
-        { label: '💼 Find Jobs', onclick: "goToPage('market.html?mode=jobs')" }
-      );
+      container.innerHTML = emptyStateHTML('fa-briefcase','No Active Jobs','Jobs you have been hired for will appear here.',{label:'Find Jobs',onclick:"goToPage('market.html?mode=jobs')"});
       return;
     }
 

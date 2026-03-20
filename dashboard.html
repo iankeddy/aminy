@@ -152,6 +152,10 @@
     <!-- My Helpers -->
     <div class="card">
       <h3><i class="fas fa-calendar-check"></i> My Hired Helpers</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin:-4px 0 12px;line-height:1.5">
+        <i class="fas fa-shield-halved" style="color:#3db83a"></i>
+        Pay securely via M-Pesa. Funds are held in escrow until you confirm the job is done.
+      </p>
       <div id="my-bookings-list">Loading...</div>
     </div>
 
@@ -177,6 +181,40 @@
     <div class="card" id="helper-badges-card" style="display:none">
       <h3><i class="fas fa-award"></i> My Achievements</h3>
       <div id="my-badges-container"></div>
+    </div>
+
+    <!-- Wallet -->
+    <div class="card" id="helper-wallet-card" style="display:none;background:linear-gradient(135deg,#1a4a1a,#2a8a28);color:white;border:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div style="font-size:12px;opacity:0.75;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">My Wallet</div>
+          <div style="font-family:var(--font-display);font-weight:900;font-size:32px;margin-top:2px" id="wallet-balance">KES 0</div>
+        </div>
+        <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:22px">
+          💰
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:1;background:rgba(255,255,255,0.12);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:11px;opacity:0.7">Total Earned</div>
+          <div style="font-weight:800;font-size:14px;margin-top:2px" id="wallet-earned">KES 0</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.12);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:11px;opacity:0.7">Withdrawn</div>
+          <div style="font-weight:800;font-size:14px;margin-top:2px" id="wallet-withdrawn">KES 0</div>
+        </div>
+      </div>
+      <button onclick="openWithdrawSheet()"
+        style="width:100%;background:white;color:#2a8a28;border:none;border-radius:30px;
+        padding:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">
+        <i class="fas fa-money-bill-wave"></i> Withdraw to M-Pesa
+      </button>
+    </div>
+
+    <!-- Wallet Transactions -->
+    <div class="card" id="wallet-txn-card" style="display:none">
+      <h3><i class="fas fa-list-ul" style="color:#3db83a"></i> Recent Earnings</h3>
+      <div id="wallet-transactions-list"></div>
     </div>
 
     <!-- Requests -->
@@ -272,6 +310,7 @@
 <script src="badges.js"></script>
 <script src="notifications.js"></script>
 <script src="reviews-addon.js"></script>
+<script src="mpesa-payments.js"></script>
 <script src="gig-manager.js"></script>
 
 <!-- KEEP YOUR EXISTING AUTH + ROLE SCRIPT EXACTLY AS IS -->
@@ -379,6 +418,12 @@
         const badgesCard = document.getElementById('helper-badges-card');
         if (badgesCard) badgesCard.style.display = 'block';
         loadMyBadges?.(user.id);
+        // Show and load wallet
+        const walletCard = document.getElementById('helper-wallet-card');
+        const walletTxnCard = document.getElementById('wallet-txn-card');
+        if (walletCard) walletCard.style.display = 'block';
+        if (walletTxnCard) walletTxnCard.style.display = 'block';
+        loadHelperWallet?.();
       }
       loadMarketplaceJobs?.();
       loadChatList?.();
@@ -394,5 +439,122 @@
 
 
 <script>document.addEventListener("DOMContentLoaded", () => initNav("dashboard"));</script>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAY & CONFIRM MODAL  (client pays into escrow)
+══════════════════════════════════════════════════════════ -->
+<div id="pay-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);
+  z-index:8000;align-items:flex-end;justify-content:center;padding:0"
+  onclick="if(event.target===this)closePayModal()">
+  <div style="background:white;width:100%;max-width:480px;border-radius:20px 20px 0 0;
+    padding:0 0 32px;overflow:hidden">
+    <!-- Handle -->
+    <div style="width:40px;height:4px;background:#e0e8e0;border-radius:2px;margin:12px auto 0"></div>
+    <!-- Header -->
+    <div style="padding:16px 20px 12px;border-bottom:1px solid #edf3ed">
+      <div style="font-family:var(--font-display);font-weight:800;font-size:18px;color:#111811">
+        <i class="fas fa-lock" style="color:#3db83a"></i> Pay via M-Pesa
+      </div>
+      <div style="font-size:12px;color:#8a9a8a;margin-top:3px">
+        Funds are held securely in escrow until you confirm job completion
+      </div>
+    </div>
+    <!-- Body -->
+    <div style="padding:20px">
+      <!-- Job summary -->
+      <div style="background:#f5f7f5;border-radius:12px;padding:14px;margin-bottom:16px">
+        <div style="font-size:12px;color:#8a9a8a;margin-bottom:4px">JOB</div>
+        <div style="font-weight:700;font-size:15px;color:#111811" id="pay-job-title">—</div>
+        <div style="font-size:13px;color:#445044;margin-top:4px" id="pay-helper-name"></div>
+      </div>
+      <!-- Amount -->
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:700;color:#8a9a8a;text-transform:uppercase;
+          letter-spacing:0.5px;display:block;margin-bottom:6px">Amount (KES)</label>
+        <input type="number" id="pay-amount" placeholder="e.g. 500" min="1"
+          style="width:100%;padding:12px 14px;border:1.5px solid #dfe6df;border-radius:12px;
+          font-size:16px;font-weight:700;color:#111811;background:#f5f7f5;outline:none;font-family:inherit"
+          oninput="updatePaySummary()">
+      </div>
+      <!-- Phone -->
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:700;color:#8a9a8a;text-transform:uppercase;
+          letter-spacing:0.5px;display:block;margin-bottom:6px">M-Pesa Phone Number</label>
+        <input type="tel" id="pay-phone" placeholder="e.g. 0712345678"
+          style="width:100%;padding:12px 14px;border:1.5px solid #dfe6df;border-radius:12px;
+          font-size:15px;color:#111811;background:#f5f7f5;outline:none;font-family:inherit">
+      </div>
+      <!-- Summary -->
+      <div id="pay-summary" style="display:none;background:#e8f7e8;border-radius:12px;
+        padding:12px 14px;margin-bottom:16px;font-size:13px;color:#1a4a1a">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span>Job payment</span><span id="pay-summary-amount" style="font-weight:700"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;color:#3db83a;font-size:11px">
+          <span>🔒 Held in escrow until job confirmed</span>
+        </div>
+      </div>
+      <!-- CTA -->
+      <button id="pay-btn" onclick="submitPayment()"
+        style="width:100%;background:#3db83a;color:white;border:none;border-radius:30px;
+        padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;
+        display:flex;align-items:center;justify-content:center;gap:8px">
+        <i class="fas fa-lock"></i> Pay & Confirm Booking
+      </button>
+      <div style="text-align:center;font-size:11px;color:#8a9a8a;margin-top:10px">
+        You will receive an M-Pesa prompt on your phone to confirm
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     WITHDRAW SHEET  (helper withdraws to M-Pesa)
+══════════════════════════════════════════════════════════ -->
+<div id="withdraw-sheet" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);
+  z-index:8000;align-items:flex-end;justify-content:center;padding:0"
+  onclick="if(event.target===this)closeWithdrawSheet()">
+  <div style="background:white;width:100%;max-width:480px;border-radius:20px 20px 0 0;
+    padding:0 0 32px;overflow:hidden">
+    <div style="width:40px;height:4px;background:#e0e8e0;border-radius:2px;margin:12px auto 0"></div>
+    <div style="padding:16px 20px 12px;border-bottom:1px solid #edf3ed">
+      <div style="font-family:var(--font-display);font-weight:800;font-size:18px;color:#111811">
+        <i class="fas fa-money-bill-wave" style="color:#3db83a"></i> Withdraw to M-Pesa
+      </div>
+      <div style="font-size:12px;color:#8a9a8a;margin-top:3px">
+        Available: <span id="withdraw-available" style="font-weight:700;color:#3db83a">KES 0</span>
+      </div>
+    </div>
+    <div style="padding:20px">
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:700;color:#8a9a8a;text-transform:uppercase;
+          letter-spacing:0.5px;display:block;margin-bottom:6px">Amount to Withdraw (KES)</label>
+        <input type="number" id="withdraw-amount" placeholder="Min KES 100" min="100"
+          style="width:100%;padding:12px 14px;border:1.5px solid #dfe6df;border-radius:12px;
+          font-size:16px;font-weight:700;color:#111811;background:#f5f7f5;outline:none;font-family:inherit">
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="font-size:12px;font-weight:700;color:#8a9a8a;text-transform:uppercase;
+          letter-spacing:0.5px;display:block;margin-bottom:6px">M-Pesa Phone Number</label>
+        <input type="tel" id="withdraw-phone" placeholder="e.g. 0712345678"
+          style="width:100%;padding:12px 14px;border:1.5px solid #dfe6df;border-radius:12px;
+          font-size:15px;color:#111811;background:#f5f7f5;outline:none;font-family:inherit">
+        <div style="font-size:11px;color:#8a9a8a;margin-top:5px">
+          Make sure this is the M-Pesa number registered to your account
+        </div>
+      </div>
+      <button id="withdraw-btn" onclick="submitWithdrawal()"
+        style="width:100%;background:#3db83a;color:white;border:none;border-radius:30px;
+        padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;
+        display:flex;align-items:center;justify-content:center;gap:8px">
+        <i class="fas fa-paper-plane"></i> Withdraw Now
+      </button>
+      <div style="text-align:center;font-size:11px;color:#8a9a8a;margin-top:10px">
+        Funds arrive on M-Pesa within 1 minute
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
