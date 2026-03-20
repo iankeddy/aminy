@@ -1308,7 +1308,7 @@ async function applyForJob(jobId) {
     db.from('messages').insert([{
       sender_id: currentUser.id, recipient_id: job.client_id,
       job_id: jobId, content: introMsg, is_read: false
-    }]).then(({ error }) => { if(error) console.warn('Intro message failed:', error.message); });
+    }]).then(() => { /* Intro message — fire and forget, non-critical */ });
 
     appliedJobs.add(jobId);
     showToast('✅ Application sent! The client has been notified.','green');

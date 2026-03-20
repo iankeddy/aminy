@@ -107,7 +107,7 @@ async function fetchBadgeData(helperId) {
       avgRating,
     };
   } catch (e) {
-    console.warn('Badge fetch error:', e.message);
+    /* Badge fetch failed silently — badges are non-critical */
     return null;
   }
 }

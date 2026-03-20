@@ -178,7 +178,7 @@ async function loadDashboardStats() {
 
         if (document.getElementById('stat-pending')) document.getElementById('stat-pending').innerText = count || 0;
         if (document.getElementById('stat-money')) document.getElementById('stat-money').innerText = `KES ${total.toLocaleString()}`;
-    } catch (err) { console.error("Stats Error:", err); }
+    } catch (err) { /* Stats unavailable — non-critical, admin panel only */ }
 }
 
 async function loadPendingHelpers() {
@@ -478,7 +478,7 @@ async function initChat() {
     chatCurrentProfile = profile;
     await loadUnreadCount();
     updateUnreadBadge();
-  } catch (e) { console.error('Chat init error:', e); }
+  } catch (e) { /* Chat init failed silently — page remains usable without chat */ }
 }
 
 // ── OPEN CHAT PAGE ──
@@ -598,8 +598,7 @@ async function loadChatList() {
     }).join('');
 
   } catch (e) {
-    console.error('loadChatList error:', e);
-    contactList.innerHTML = `<div style="padding:20px;text-align:center;color:#ef4444;font-size:13px">Error loading conversations</div>`;
+    contactList.innerHTML = `<div style="padding:20px;text-align:center;color:#ef4444;font-size:13px">Error loading conversations. Please try again.</div>`;
   }
 }
 
@@ -729,7 +728,6 @@ async function sendMessage() {
     tempDiv.remove();
     // Realtime will add the message via subscription
   } catch (e) {
-    console.error('sendMessage error:', e);
     tempDiv.querySelector('.msg').style.background = '#ef4444';
     const errMsg = e?.message?.includes('row-level security')
       ? 'Permission denied — check Supabase RLS policy'

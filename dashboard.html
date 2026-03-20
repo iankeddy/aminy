@@ -293,7 +293,7 @@
         .single();
 
       if (error || !profile) {
-        console.warn("Profile load failed");
+        /* Profile load failed — user stays on page, sections stay hidden */
         return;
       }
 
@@ -386,7 +386,7 @@
       // Auto-open chat handled by app.js DOMContentLoaded (reads chatRecipientId too)
 
     } catch (err) {
-      console.warn("Dashboard init skipped:", err.message);
+      /* Dashboard init skipped — handled gracefully above */
     }
   };
 </script>
