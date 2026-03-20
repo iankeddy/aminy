@@ -1447,12 +1447,87 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 
     <!-- PAYMENTS -->
     <section class="page" id="page-payments">
-      <div class="section-header"><div><div class="section-title">Payments & Revenue</div><div class="section-desc">Bookings and platform revenue</div></div></div>
-      <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr)" id="payment-metrics"></div>
-      <div class="panel">
-        <div class="panel-header"><div class="panel-title">All Bookings</div></div>
-        <div class="table-wrap"><table><thead><tr><th>Job</th><th>Client</th><th>Helper</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody id="payments-table"></tbody></table></div>
+      <div class="section-header">
+        <div><div class="section-title">Payments & Finance</div><div class="section-desc">Escrow, commissions, wallets and withdrawals</div></div>
+        <button class="btn btn-primary btn-sm" onclick="loadFinance()"><i class="fas fa-sync-alt"></i> Refresh</button>
       </div>
+
+      <!-- ── KPI METRICS ── -->
+      <div class="metrics-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:6px" id="finance-metrics-row1"></div>
+      <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr)" id="finance-metrics-row2"></div>
+
+      <!-- ── ESCROW PIPELINE ── -->
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-header">
+          <div><div class="panel-title"><i class="fas fa-lock" style="color:var(--a)"></i> Escrow Pipeline</div>
+          <div class="panel-subtitle">Live M-Pesa payments — all amounts in KES</div></div>
+          <div class="chips" style="margin-left:auto">
+            <div class="chip active" onclick="filterEscrow('all',this)">All</div>
+            <div class="chip" onclick="filterEscrow('pending',this)">Pending</div>
+            <div class="chip" onclick="filterEscrow('held',this)">Held</div>
+            <div class="chip" onclick="filterEscrow('released',this)">Released</div>
+            <div class="chip" onclick="filterEscrow('failed',this)">Failed</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Receipt / Ref</th><th>Client</th><th>Helper</th><th>Job</th>
+              <th>Amount</th><th>Commission</th><th>Helper Share</th>
+              <th>Escrow</th><th>Date</th>
+            </tr></thead>
+            <tbody id="escrow-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── WALLETS + WITHDRAWALS side by side ── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+
+        <!-- Helper Wallets -->
+        <div class="panel">
+          <div class="panel-header">
+            <div><div class="panel-title"><i class="fas fa-wallet" style="color:var(--a)"></i> Helper Wallets</div>
+            <div class="panel-subtitle">Earned balances awaiting withdrawal</div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Helper</th><th>Balance</th><th>Earned</th><th>Withdrawn</th></tr></thead>
+              <tbody id="wallets-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Withdrawal Requests -->
+        <div class="panel">
+          <div class="panel-header">
+            <div><div class="panel-title"><i class="fas fa-money-bill-wave" style="color:var(--a)"></i> Withdrawals</div>
+            <div class="panel-subtitle">Helper payout requests to M-Pesa</div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Helper</th><th>Amount</th><th>Phone</th><th>Status</th><th>Date</th></tr></thead>
+              <tbody id="withdrawals-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── TRANSACTION LEDGER ── -->
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-header">
+          <div><div class="panel-title"><i class="fas fa-list-ul" style="color:var(--a)"></i> Transaction Ledger</div>
+          <div class="panel-subtitle">Full record of every money movement</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Type</th><th>User</th><th>Amount</th><th>Direction</th><th>Description</th><th>M-Pesa Ref</th><th>Date</th></tr></thead>
+            <tbody id="ledger-table"></tbody>
+          </table>
+        </div>
+      </div>
+
     </section>
 
     <!-- REVIEWS -->
@@ -2920,6 +2995,197 @@ async function loadBookings() {
   } catch(e) { console.warn('loadBookings:', e.message); allBookings = []; }
   renderPayments(); renderApps(allBookings); renderAppMetrics();
 }
+
+// ── FINANCE STATE ─────────────────────────────────────────────
+let allEscrow = [], allWallets = [], allWithdrawals = [], allLedger = [];
+
+// ── LOAD ALL FINANCE DATA ──────────────────────────────────────
+async function loadFinance() {
+  try {
+    // Payments with joined names
+    const { data: payments } = await db.from('payments')
+      .select(`
+        id, amount, escrow_status, status, mpesa_receipt_number,
+        commission_amount, helper_amount, created_at, phone_number,
+        client:profiles!user_id(full_name, email),
+        booking:bookings!booking_id(
+          helper_id,
+          helper:profiles!helper_id(full_name),
+          job:jobs!job_id(title)
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    allEscrow = payments || [];
+
+    // Wallets
+    const { data: wallets } = await db.from('wallets')
+      .select(`id, balance, total_earned, total_withdrawn, helper:profiles!helper_id(full_name, email)`)
+      .order('total_earned', { ascending: false });
+    allWallets = wallets || [];
+
+    // Withdrawals
+    const { data: withdrawals } = await db.from('withdrawals')
+      .select(`id, amount, phone_number, status, mpesa_ref, requested_at, helper:profiles!helper_id(full_name)`)
+      .order('requested_at', { ascending: false })
+      .limit(50);
+    allWithdrawals = withdrawals || [];
+
+    // Transaction ledger
+    const { data: txns } = await db.from('wallet_transactions')
+      .select(`id, type, amount, direction, description, mpesa_ref, status, created_at, user:profiles!user_id(full_name)`)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    allLedger = txns || [];
+
+    renderFinanceMetrics();
+    renderEscrowTable(allEscrow);
+    renderWalletsTable();
+    renderWithdrawalsTable();
+    renderLedgerTable();
+
+  } catch(e) { console.warn('loadFinance:', e.message); }
+}
+
+// ── FINANCE METRICS ────────────────────────────────────────────
+function renderFinanceMetrics() {
+  const totalCollected  = allEscrow.filter(p => p.status === 'completed').reduce((s,p) => s + Number(p.amount||0), 0);
+  const heldInEscrow    = allEscrow.filter(p => p.escrow_status === 'held').reduce((s,p) => s + Number(p.amount||0), 0);
+  const totalReleased   = allEscrow.filter(p => p.escrow_status === 'released').reduce((s,p) => s + Number(p.amount||0), 0);
+  const totalCommission = allEscrow.filter(p => p.escrow_status === 'released').reduce((s,p) => s + Number(p.commission_amount||0), 0);
+  const totalWallets    = allWallets.reduce((s,w) => s + Number(w.balance||0), 0);
+  const totalWithdrawn  = allWithdrawals.filter(w => w.status === 'completed').reduce((s,w) => s + Number(w.amount||0), 0);
+
+  const r1 = document.getElementById('finance-metrics-row1');
+  const r2 = document.getElementById('finance-metrics-row2');
+  if(r1) r1.innerHTML = `
+    ${metricCard('green','fa-lock','KES '+heldInEscrow.toLocaleString(),'In Escrow (Active)')}
+    ${metricCard('purple','fa-coins','KES '+totalCommission.toLocaleString(),'Aminy Commission Earned')}
+  `;
+  if(r2) r2.innerHTML = `
+    ${metricCard('blue','fa-credit-card','KES '+totalCollected.toLocaleString(),'Total M-Pesa Collected')}
+    ${metricCard('orange','fa-paper-plane','KES '+totalReleased.toLocaleString(),'Total Escrow Released')}
+    ${metricCard('teal','fa-wallet','KES '+totalWallets.toLocaleString(),'Helper Wallet Balances')}
+  `;
+}
+
+// ── ESCROW TABLE ───────────────────────────────────────────────
+const escrowBadge = s => ({
+  pending:  '<span class="badge badge-grey">Pending</span>',
+  held:     '<span class="badge badge-orange">Held</span>',
+  released: '<span class="badge badge-green">Released</span>',
+  refunded: '<span class="badge badge-blue">Refunded</span>',
+  failed:   '<span class="badge badge-red">Failed</span>',
+}[s] || `<span class="badge badge-grey">${s}</span>`);
+
+function filterEscrow(filter, el) {
+  el.closest('.chips').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const filtered = filter === 'all' ? allEscrow : allEscrow.filter(p => p.escrow_status === filter);
+  renderEscrowTable(filtered);
+}
+
+function renderEscrowTable(payments) {
+  const tbody = document.getElementById('escrow-table');
+  if(!tbody) return;
+  if(!payments.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">💳</div><h4>No payments yet</h4></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = payments.map(p => {
+    const client  = p.client?.full_name || p.client?.email || '—';
+    const helper  = p.booking?.helper?.full_name || '—';
+    const job     = p.booking?.job?.title || '—';
+    const receipt = p.mpesa_receipt_number || '—';
+    const comm    = p.commission_amount ? 'KES ' + Number(p.commission_amount).toLocaleString() : '—';
+    const share   = p.helper_amount     ? 'KES ' + Number(p.helper_amount).toLocaleString()     : '—';
+    return `<tr>
+      <td style="font-family:monospace;font-size:11px;color:var(--a)">${receipt}</td>
+      <td style="font-size:12px">${client}</td>
+      <td style="font-size:12px">${helper}</td>
+      <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${job}</td>
+      <td style="font-weight:700;color:var(--green-dark)">KES ${Number(p.amount||0).toLocaleString()}</td>
+      <td style="color:var(--violet)">${comm}</td>
+      <td style="color:var(--a)">${share}</td>
+      <td>${escrowBadge(p.escrow_status)}</td>
+      <td class="td-muted">${formatDate(p.created_at)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── WALLETS TABLE ──────────────────────────────────────────────
+function renderWalletsTable() {
+  const tbody = document.getElementById('wallets-table');
+  if(!tbody) return;
+  if(!allWallets.length) {
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state" style="padding:20px"><div class="empty-icon">👛</div><h4>No wallets yet</h4></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allWallets.map(w => `
+    <tr>
+      <td style="font-size:12px;font-weight:600">${w.helper?.full_name || w.helper?.email || '—'}</td>
+      <td style="font-weight:800;color:var(--green-dark)">KES ${Number(w.balance||0).toLocaleString()}</td>
+      <td style="color:var(--a)">KES ${Number(w.total_earned||0).toLocaleString()}</td>
+      <td class="td-muted">KES ${Number(w.total_withdrawn||0).toLocaleString()}</td>
+    </tr>`).join('');
+}
+
+// ── WITHDRAWALS TABLE ──────────────────────────────────────────
+const wdBadge = s => ({
+  pending:    '<span class="badge badge-grey">Pending</span>',
+  processing: '<span class="badge badge-orange">Processing</span>',
+  completed:  '<span class="badge badge-green">Completed</span>',
+  failed:     '<span class="badge badge-red">Failed</span>',
+}[s] || `<span class="badge badge-grey">${s}</span>`);
+
+function renderWithdrawalsTable() {
+  const tbody = document.getElementById('withdrawals-table');
+  if(!tbody) return;
+  if(!allWithdrawals.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div class="empty-icon">💸</div><h4>No withdrawals yet</h4></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allWithdrawals.map(w => `
+    <tr>
+      <td style="font-size:12px;font-weight:600">${w.helper?.full_name || '—'}</td>
+      <td style="font-weight:700;color:var(--green-dark)">KES ${Number(w.amount||0).toLocaleString()}</td>
+      <td style="font-family:monospace;font-size:11px">${w.phone_number || '—'}</td>
+      <td>${wdBadge(w.status)}</td>
+      <td class="td-muted">${formatDate(w.requested_at)}</td>
+    </tr>`).join('');
+}
+
+// ── LEDGER TABLE ───────────────────────────────────────────────
+function renderLedgerTable() {
+  const tbody = document.getElementById('ledger-table');
+  if(!tbody) return;
+  if(!allLedger.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:20px"><div class="empty-icon">📒</div><h4>No transactions yet</h4></div></td></tr>`;
+    return;
+  }
+  const typeLabel = {
+    escrow_hold:    '🔒 Escrow Hold',
+    escrow_release: '✅ Escrow Release',
+    commission:     '💼 Commission',
+    withdrawal:     '💸 Withdrawal',
+    withdrawal_fee: '📋 Withdrawal Fee',
+    refund:         '↩️ Refund',
+  };
+  tbody.innerHTML = allLedger.map(t => {
+    const isCredit = t.direction === 'credit';
+    const amtColor = isCredit ? 'var(--green-dark)' : 'var(--coral,#ef4444)';
+    const sign     = isCredit ? '+' : '-';
+    return `<tr>
+      <td style="font-size:12px;font-weight:600">${typeLabel[t.type] || t.type}</td>
+      <td style="font-size:12px">${t.user?.full_name || '—'}</td>
+      <td style="font-weight:800;color:${amtColor}">${sign} KES ${Number(t.amount||0).toLocaleString()}</td>
+      <td>${isCredit ? '<span class="badge badge-green">Credit</span>' : '<span class="badge badge-red">Debit</span>'}</td>
+      <td style="font-size:12px;color:var(--t3);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description || '—'}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--a)">${t.mpesa_ref || '—'}</td>
+      <td class="td-muted">${formatDate(t.created_at)}</td>
+    </tr>`;
+  }).join('');
+}
 function renderAppMetrics() {
   const pending = allBookings.filter(b=>b.status==='pending').length;
   const accepted = allBookings.filter(b=>b.status==='accepted').length;
@@ -2953,28 +3219,10 @@ function renderApps(bookings) {
     </tr>`).join('');
 }
 
-// ── PAYMENTS ──────────────────────────────────────────────────
+// ── PAYMENTS (legacy stub — page now uses loadFinance()) ──────
 function renderPayments() {
-  const accepted = allBookings.filter(b=>b.status==='accepted');
-  const revenue = accepted.reduce((s,b)=>s+(Number(b.total_price)||0),0);
-  const el = document.getElementById('payment-metrics');
-  if(el) el.innerHTML = `
-    ${metricCard('green','fa-coins','KES '+revenue.toLocaleString(),'Total Revenue')}
-    ${metricCard('blue','fa-exchange-alt',accepted.length,'Accepted Bookings')}
-    ${metricCard('orange','fa-hourglass-half',allBookings.filter(b=>b.status==='pending').length,'Pending')}
-  `;
-  const tbody = document.getElementById('payments-table');
-  if(!tbody) return;
-  if(!allBookings.length){ tbody.innerHTML=`<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">💰</div><h4>No bookings yet</h4></div></td></tr>`; return; }
-  tbody.innerHTML = allBookings.map(b=>`
-    <tr>
-      <td class="td-muted" style="font-size:11px;font-family:monospace">${(b.job_id||'—').slice(0,12)}…</td>
-      <td class="td-muted" style="font-size:11px;font-family:monospace">${(b.client_id||'—').slice(0,12)}…</td>
-      <td class="td-muted" style="font-size:11px;font-family:monospace">${(b.helper_id||'—').slice(0,12)}…</td>
-      <td style="font-weight:700;color:var(--green-dark)">KES ${Number(b.total_price||0).toLocaleString()}</td>
-      <td>${statusBadge(b.status)}</td>
-      <td class="td-muted">${formatDate(b.created_at)}</td>
-    </tr>`).join('');
+  // The finance page is now fully loaded by loadFinance() via navigate()
+  // This stub keeps loadBookings() happy since it calls renderPayments()
 }
 
 // ── REVIEWS ───────────────────────────────────────────────────
@@ -3328,7 +3576,7 @@ const pageMeta = {
   clients:          ['Client Management', 'All registered clients'],
   jobs:             ['Jobs & Tasks',      'Monitor all platform jobs'],
   applications:     ['Applications',      'Helper applications and booking status'],
-  payments:         ['Payments',          'Revenue and booking financials'],
+  payments:         ['Payments & Finance', 'Escrow, commissions, wallets and withdrawals'],
   reviews:          ['Reviews',           'Platform quality monitoring'],
   badges:           ['Helper Badges',     'Achievement system overview'],
   reports:          ['Reports',           'Analytics and platform metrics'],
@@ -3372,6 +3620,7 @@ function navigate(pageKey) {
   document.getElementById('pageSubtitle').textContent = m[1];
 
   // Page-specific loaders
+  if(pageKey==='payments')          loadFinance();
   if(pageKey==='reviews')           loadReviews();
   if(pageKey==='badges')            loadBadgesPage();
   if(pageKey==='reports')           loadReportsPage();
