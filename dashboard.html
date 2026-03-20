@@ -300,6 +300,14 @@
         return;
       }
 
+      // ── ADMIN GUARD ──
+      // Admins should never see the regular dashboard.
+      // Silently redirect them to admin.html — no link is ever shown publicly.
+      if (profile.role === "admin") {
+        window.location.href = "admin.html";
+        return;
+      }
+
       document.getElementById("user-greeting").innerText =
         `Welcome, ${profile.full_name || "User"}`;
       document.getElementById("user-role-badge").innerText =
