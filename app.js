@@ -1340,6 +1340,7 @@ function stepDocuments() {
         hint: 'A clear photo of your face. No sunglasses or hats.',
         hasFile: wizState.selfieHasFile,
         fileName: wizState.selfieFileName,
+        needsReselect: wizState.selfieHasFile && !wizState.selfieFile,
       })}
       ${docUploadField({
         id: 'upload-id',
@@ -1349,6 +1350,7 @@ function stepDocuments() {
         hint: 'Front of your Kenya National ID or passport photo page.',
         hasFile: wizState.idHasFile,
         fileName: wizState.idFileName,
+        needsReselect: wizState.idHasFile && !wizState.idFile,
       })}
       ${docUploadField({
         id: 'upload-conduct',
@@ -1358,30 +1360,56 @@ function stepDocuments() {
         hint: 'Certificate of Good Conduct from the Kenya Police Service.',
         hasFile: wizState.conductHasFile,
         fileName: wizState.conductFileName,
+        needsReselect: wizState.conductHasFile && !wizState.conductFile,
       })}
     </div>`;
 }
 
-function docUploadField({ id, label, required, icon, hint, hasFile, fileName }) {
+function docUploadField({ id, label, required, icon, hint, hasFile, fileName, needsReselect }) {
+  // needsReselect = true when localStorage says a file was chosen before,
+  // but the page was refreshed and the File object is gone (cannot survive page reload).
+  // We must warn the user to re-pick the file rather than show a false green checkmark.
+
+  let zoneContent;
+  if (needsReselect) {
+    // Warn state — file name is known but File object is lost
+    zoneContent = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px;text-align:center">
+        <i class="fas fa-rotate-right" style="font-size:24px;color:#f07623"></i>
+        <span style="font-size:13px;font-weight:700;color:#7a4a10">Re-select required</span>
+        <span style="font-size:11px;color:#9a6a30">${escWiz(fileName || 'Previously selected')} — tap to re-upload</span>
+      </div>`;
+  } else if (hasFile) {
+    // Happy state — file is freshly selected this session
+    zoneContent = `
+      <div class="wiz-file-overlay" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px">
+        <i class="fas fa-check-circle" style="font-size:24px;color:#3db83a"></i>
+        <span style="font-size:13px;font-weight:700;color:#0d1a0d">${escWiz(fileName || 'File selected')}</span>
+        <span class="wiz-change-link">Tap to change</span>
+      </div>`;
+  } else {
+    // Empty state
+    zoneContent = `
+      <div class="wiz-upload-placeholder">
+        <i class="fas fa-cloud-arrow-up"></i>
+        <span>Tap to upload</span>
+        <small>JPG, PNG or PDF · Max 5MB</small>
+      </div>`;
+  }
+
+  // Zone border color: orange warning if needs re-select, green if done, dashed if empty
+  const zoneClass = needsReselect
+    ? 'wiz-upload-zone wiz-reselect'
+    : hasFile ? 'wiz-upload-zone has-file' : 'wiz-upload-zone';
+
   return `
     <div class="wiz-doc-field" id="field-${id}">
       <div class="wiz-doc-label">
         <i class="fas ${icon}"></i> ${label} ${required ? '<span class="wiz-required">*</span>' : ''}
       </div>
       <div class="wiz-doc-hint">${hint}</div>
-      <div class="wiz-upload-zone ${hasFile ? 'has-file' : ''}" id="zone-${id}" onclick="document.getElementById('${id}').click()">
-        ${hasFile
-          ? `<div class="wiz-file-overlay" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px">
-               <i class="fas fa-check-circle" style="font-size:24px;color:#3db83a"></i>
-               <span style="font-size:13px;font-weight:700;color:#0d1a0d">${escWiz(fileName || 'File selected')}</span>
-               <span class="wiz-change-link">Tap to change</span>
-             </div>`
-          : `<div class="wiz-upload-placeholder">
-               <i class="fas fa-cloud-arrow-up"></i>
-               <span>Tap to upload</span>
-               <small>JPG, PNG or PDF · Max 5MB</small>
-             </div>`
-        }
+      <div class="${zoneClass}" id="zone-${id}" onclick="document.getElementById('${id}').click()">
+        ${zoneContent}
       </div>
       <input type="file" id="${id}" accept="image/*,.pdf" style="display:none" onchange="wizHandleFile('${id}', this)">
     </div>`;
@@ -1514,10 +1542,23 @@ function wizValidateStep(step) {
     if (!loc) { wizShakeField('location-name', 'Please enter your location'); return false; }
   }
   if (step === 3) {
-    const missing = [];
-    if (!wizState.selfieFile  && !wizState.selfieHasFile)  missing.push('Selfie');
-    if (!wizState.idFile      && !wizState.idHasFile)      missing.push('National ID');
-    if (!wizState.conductFile && !wizState.conductHasFile) missing.push('Police Clearance');
+    const missing   = [];
+    const reselect  = [];
+
+    // Check each doc: missing = never chosen, reselect = chosen before but page refreshed (File object lost)
+    if (!wizState.selfieFile && !wizState.selfieHasFile)       missing.push('Selfie');
+    else if (!wizState.selfieFile && wizState.selfieHasFile)   reselect.push('Selfie');
+
+    if (!wizState.idFile && !wizState.idHasFile)               missing.push('National ID');
+    else if (!wizState.idFile && wizState.idHasFile)           reselect.push('National ID');
+
+    if (!wizState.conductFile && !wizState.conductHasFile)     missing.push('Police Clearance');
+    else if (!wizState.conductFile && wizState.conductHasFile) reselect.push('Police Clearance');
+
+    if (reselect.length) {
+      wizShowToast(`Page was refreshed — please re-select: ${reselect.join(', ')}`, 'warning');
+      return false;
+    }
     if (missing.length) {
       wizShowToast(`Please upload: ${missing.join(', ')}`, 'warning');
       return false;
@@ -1665,8 +1706,24 @@ async function wizSubmit() {
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…'; }
 
   // Final validation
-  if (!wizState.fullName)       { wizShowToast('Missing name — go back to Profile', 'warning'); wizGoTo(1); return; }
-  if (!wizState.locationName)   { wizShowToast('Missing location — go back to Location', 'warning'); wizGoTo(2); return; }
+  if (!wizState.fullName)     { wizShowToast('Missing name — go back to Profile', 'warning'); wizGoTo(1); return; }
+  if (!wizState.locationName) { wizShowToast('Missing location — go back to Location', 'warning'); wizGoTo(2); return; }
+
+  // Check for the refresh-lost-file scenario:
+  // hasFile=true means it was selected before, but File=null means the page reloaded and the object is gone.
+  // We must NOT silently skip uploading — show a clear message and send them back to re-pick.
+  const needsReselect = [];
+  if (wizState.selfieHasFile  && !wizState.selfieFile)  needsReselect.push('Selfie');
+  if (wizState.idHasFile      && !wizState.idFile)      needsReselect.push('National ID');
+  if (wizState.conductHasFile && !wizState.conductFile) needsReselect.push('Police Clearance');
+  if (needsReselect.length) {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit'; }
+    wizShowToast(`Page was refreshed — please re-select your files: ${needsReselect.join(', ')}`, 'warning');
+    wizGoTo(3);
+    return;
+  }
+
+  // Check for completely missing files
   if (!wizState.selfieFile && !wizState.selfieHasFile)  { wizShowToast('Missing selfie', 'warning'); wizGoTo(3); return; }
   if (!wizState.idFile && !wizState.idHasFile)          { wizShowToast('Missing National ID', 'warning'); wizGoTo(3); return; }
   if (!wizState.conductFile && !wizState.conductHasFile){ wizShowToast('Missing Police Clearance', 'warning'); wizGoTo(3); return; }
@@ -1896,6 +1953,8 @@ function injectWizardStyles() {
   }
   .wiz-upload-zone:hover { border-color: var(--green,#3db83a); background: var(--green-light,#e8f7e8); }
   .wiz-upload-zone.has-file { border-style: solid; border-color: var(--green,#3db83a); background: #f0fdf0; }
+  .wiz-upload-zone.wiz-reselect { border-style: solid; border-color: #f07623; background: #fff8ec; }
+  .wiz-upload-zone.wiz-reselect:hover { border-color: #d4601a; background: #fef0e0; }
   .wiz-upload-placeholder { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--text-muted,#8a9a8a); padding: 16px; text-align: center; }
   .wiz-upload-placeholder i { font-size: 26px; color: var(--green,#3db83a); }
   .wiz-upload-placeholder span { font-size: 13px; font-weight: 700; color: var(--text-mid,#445044); }
