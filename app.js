@@ -345,8 +345,12 @@ async function loadTrendingJobs() {
           <p>${escapeHtml(job.description?.slice(0, 60) || "")}</p>
           <span class="budget">${escapeHtml(job.budget || "Budget not set")}</span>
         </div>`).join("")
-      : "<p class='muted'>No jobs available</p>";
-  } catch { container.innerHTML = "<p class='muted'>Jobs unavailable</p>"; }
+      : `<div style="text-align:center;padding:28px 16px;background:var(--surface,#f5f7f5);border-radius:14px;border:1.5px dashed var(--border,#dfe6df)">
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--green-light,#e8f7e8);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:22px;color:var(--green,#3db83a)"><i class="fas fa-briefcase"></i></div>
+          <div style="font-family:var(--font-display,'Outfit',sans-serif);font-weight:800;font-size:15px;color:var(--text,#111811);margin-bottom:5px">No Trending Jobs</div>
+          <div style="font-size:13px;color:var(--text-muted,#8a9a8a);line-height:1.5">No open jobs right now. Check back soon!</div>
+        </div>`;
+  } catch { container.innerHTML = "<p class='muted'>Could not load jobs</p>"; }
 }
 
 function renderTrendingJobs(jobs) {
@@ -385,7 +389,15 @@ function filterJobs(category) {
 function renderMarketplaceJobs(jobs) {
   const container = document.getElementById("jobs-container");
   if (!container) return;
-  if (!jobs.length) { container.innerHTML = "<p class='muted'>No jobs found</p>"; return; }
+  if (!jobs.length) {
+    container.innerHTML = `<div style="text-align:center;padding:28px 16px;background:var(--surface,#f5f7f5);border-radius:14px;border:1.5px dashed var(--border,#dfe6df)">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--green-light,#e8f7e8);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:22px;color:var(--green,#3db83a)"><i class="fas fa-map-marker-alt"></i></div>
+      <div style="font-family:var(--font-display,'Outfit',sans-serif);font-weight:800;font-size:15px;color:var(--text,#111811);margin-bottom:5px">No Jobs Found</div>
+      <div style="font-size:13px;color:var(--text-muted,#8a9a8a);line-height:1.5;max-width:220px;margin:0 auto">No open jobs match your search. Try a different category or check back later.</div>
+      <button onclick="goToPage('market.html?mode=jobs')" style="margin-top:14px;background:var(--green,#3db83a);color:white;border:none;border-radius:30px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Browse All Jobs</button>
+    </div>`;
+    return;
+  }
   container.innerHTML = jobs.map(job => `
     <div class="job-card" onclick="openJobFromSearch('${job.id}')">
       <div class="job-title">${escapeHtml(job.title || "Untitled Job")}</div>

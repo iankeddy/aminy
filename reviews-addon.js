@@ -39,6 +39,43 @@ function initials(name) {
 }
 
 
+// ── EMPTY STATE HELPER ───────────────────────────────────────
+// Generates a consistent, friendly empty state card for any dashboard section.
+// icon    = Font Awesome class e.g. 'fa-bell'
+// title   = Bold headline
+// message = Subtitle / guidance text
+// action  = Optional { label, onclick } for a CTA button
+function emptyStateHTML(icon, title, message, action = null) {
+  return `
+    <div style="
+      text-align:center; padding:28px 16px;
+      background:var(--surface,#f5f7f5); border-radius:14px;
+      border:1.5px dashed var(--border,#dfe6df);
+    ">
+      <div style="
+        width:52px; height:52px; border-radius:50%;
+        background:var(--green-light,#e8f7e8);
+        display:flex; align-items:center; justify-content:center;
+        margin:0 auto 12px; font-size:22px; color:var(--green,#3db83a);
+      ">
+        <i class="fas ${icon}"></i>
+      </div>
+      <div style="font-family:var(--font-display,'Outfit',sans-serif);font-weight:800;font-size:15px;color:var(--text,#111811);margin-bottom:5px">
+        ${title}
+      </div>
+      <div style="font-size:13px;color:var(--text-muted,#8a9a8a);line-height:1.5;max-width:220px;margin:0 auto">
+        ${message}
+      </div>
+      ${action ? `
+        <button onclick="${action.onclick}"
+          style="margin-top:14px;background:var(--green,#3db83a);color:white;border:none;
+          border-radius:30px;padding:9px 22px;font-size:13px;font-weight:700;
+          cursor:pointer;font-family:inherit">
+          ${action.label}
+        </button>` : ''}
+    </div>`;
+}
+
 // ── INJECT GLOBAL STYLES ─────────────────────────────────────
 (function injectReviewStyles() {
   if (document.getElementById('review-styles')) return;
@@ -411,7 +448,12 @@ async function loadClientApplicants() {
     if (error) throw error;
 
     if (!bookings || bookings.length === 0) {
-      container.innerHTML = '<p style="color:#8a9a8a;font-size:13px;text-align:center;padding:16px 0">No pending applications yet.</p>';
+      container.innerHTML = emptyStateHTML(
+        'fa-inbox',
+        'No Applications Yet',
+        'When helpers apply for your jobs, they will appear here. Post a job to get started.',
+        { label: '📋 Post a Job', onclick: "document.getElementById('job-title')?.focus()" }
+      );
       return;
     }
 
@@ -488,11 +530,12 @@ async function loadClientBookings() {
     if (error) throw error;
 
     if (!bookings || bookings.length === 0) {
-      container.innerHTML = `
-        <div style="text-align:center;padding:24px 0">
-          <div style="font-size:28px;margin-bottom:8px">📋</div>
-          <div style="font-size:13px;color:#8a9a8a;line-height:1.5">No hired helpers yet.<br>Post a job or browse the Marketplace.</div>
-        </div>`;
+      container.innerHTML = emptyStateHTML(
+        'fa-calendar-check',
+        'No Hired Helpers Yet',
+        'Once you hire a helper for a job, they will show up here with their status.',
+        { label: '🛒 Browse Marketplace', onclick: "goToPage('market.html')" }
+      );
       return;
     }
 
@@ -572,7 +615,12 @@ async function loadHelperRequests() {
     if (error) throw error;
 
     if (!bookings || bookings.length === 0) {
-      container.innerHTML = '<p style="color:#8a9a8a;font-size:13px;text-align:center;padding:16px 0">No new job requests yet.</p>';
+      container.innerHTML = emptyStateHTML(
+        'fa-bell',
+        'No Job Requests Yet',
+        'When a client selects you for a job, the request will appear here.',
+        { label: '🔍 Browse Open Jobs', onclick: "goToPage('market.html?mode=jobs')" }
+      );
       return;
     }
 
@@ -625,7 +673,12 @@ async function loadHelperActiveJobs() {
     if (error) throw error;
 
     if (!bookings || bookings.length === 0) {
-      container.innerHTML = '<p style="color:#8a9a8a;font-size:13px;text-align:center;padding:16px 0">No active jobs right now.</p>';
+      container.innerHTML = emptyStateHTML(
+        'fa-briefcase',
+        'No Active Jobs',
+        'Jobs you have been hired for will appear here. Apply on the Marketplace to get started.',
+        { label: '💼 Find Jobs', onclick: "goToPage('market.html?mode=jobs')" }
+      );
       return;
     }
 

@@ -381,7 +381,17 @@ async function loadMyGigs() {
       </div>`;
 
     if (!gigs || gigs.length === 0) {
-      container.innerHTML = addCard;
+      container.innerHTML = `
+        <div style="text-align:center;padding:28px 16px;background:var(--surface,#f5f7f5);
+          border-radius:14px;border:1.5px dashed var(--border,#dfe6df);margin-bottom:12px">
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--green-light,#e8f7e8);
+            display:flex;align-items:center;justify-content:center;margin:0 auto 12px;
+            font-size:22px;color:var(--green,#3db83a)"><i class="fas fa-store"></i></div>
+          <div style="font-family:var(--font-display,'Outfit',sans-serif);font-weight:800;
+            font-size:15px;color:var(--text,#111811);margin-bottom:5px">No Gigs Yet</div>
+          <div style="font-size:13px;color:var(--text-muted,#8a9a8a);line-height:1.5;
+            max-width:220px;margin:0 auto">Create your first gig so clients can find and hire you directly.</div>
+        </div>` + addCard;
       return;
     }
 
