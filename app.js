@@ -294,8 +294,8 @@ document.addEventListener("DOMContentLoaded", () => {
 async function openJobFromSearch(jobId) {
   const allowed = await ensureHelperIsApproved();
   if (!allowed) return;
-  localStorage.setItem("selectedJobId", jobId);
-  window.location.href = "market.html";
+  // Pass the job ID via URL param — market.html will auto-open and highlight it
+  window.location.href = 'market.html?mode=jobs&highlight=' + jobId;
 }
 
 async function searchOpenJobs(query) {
