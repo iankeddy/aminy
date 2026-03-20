@@ -662,7 +662,16 @@
 
   // Show permission prompt (once per device, 3 days after dismiss)
   function showPushPrompt() {
+    // Don't show if already on page
     if (document.getElementById('push-prompt')) return;
+
+    // Don't show if browser already granted or denied — no point asking again
+    if ('Notification' in window && Notification.permission !== 'default') return;
+
+    // Don't show if user already clicked Allow in our custom UI
+    if (localStorage.getItem('push_asked') === '1') return;
+
+    // Don't show if user dismissed recently (3-day cooldown)
     if (localStorage.getItem('push_dismissed_until')) {
       const until = parseInt(localStorage.getItem('push_dismissed_until'));
       if (Date.now() < until) return;
@@ -689,6 +698,10 @@
     const prompt = document.getElementById('push-prompt');
     if (prompt) { prompt.classList.remove('show'); setTimeout(() => prompt.remove(), 300); }
 
+    // Mark as asked immediately — no matter what the user picks in the browser dialog
+    // This prevents the prompt from looping if the user denies or ignores
+    localStorage.setItem('push_asked', '1');
+
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
       _pushGranted = true;
@@ -696,16 +709,22 @@
       if (sub) {
         await saveSubscription(sub);
         updatePushStatusInPanel();
+        // Show a brief in-app confirmation so user knows it worked
+        if (typeof showToast === 'function') {
+          showToast('Notifications enabled ✓', 'You will now receive job and message alerts.', 'success');
+        }
       }
+    } else if (permission === 'denied') {
+      // User blocked it — update the panel footer to reflect this
+      updatePushStatusInPanel();
     }
-    localStorage.setItem('push_asked', '1');
   };
 
   window._dismissPush = function() {
     const prompt = document.getElementById('push-prompt');
     if (prompt) { prompt.classList.remove('show'); setTimeout(() => prompt.remove(), 300); }
-    // Don't ask again for 3 days
-    localStorage.setItem('push_dismissed_until', String(Date.now() + 3 * 86400000));
+    // Don't ask again for 7 days (increased from 3 — less annoying)
+    localStorage.setItem('push_dismissed_until', String(Date.now() + 7 * 86400000));
   };
 
   // Update push status line in the notification panel footer
@@ -771,17 +790,20 @@
       await loadNotifications();
       subscribeToNotifications();
 
-      // Check push permission state
+      // Check push permission state and handle accordingly
       if ('Notification' in window) {
         if (Notification.permission === 'granted') {
           _pushGranted = true;
-          // Ensure subscription is saved (e.g. after reinstall)
+          // Ensure subscription is still saved (handles reinstalls / cleared data)
           const sub = await subscribeToPush();
           if (sub) await saveSubscription(sub);
         } else if (Notification.permission === 'default') {
-          // Show prompt after a short delay — don't interrupt the page load
-          setTimeout(showPushPrompt, 8000);
+          // Only show prompt if user hasn't already been asked or dismissed recently.
+          // showPushPrompt() has all the guards built in, so it's safe to call.
+          // Wait 10 seconds so the user can settle into the page first.
+          setTimeout(showPushPrompt, 10000);
         }
+        // If 'denied' — do nothing. Respect the user's browser setting silently.
       }
       updatePushStatusInPanel();
 
