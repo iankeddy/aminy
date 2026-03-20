@@ -23,10 +23,67 @@ function toggleLoader(show) {
 
 function showModal(title, message, type = 'success') {
     const modal = document.getElementById('custom-modal');
-    if (!modal) return alert(message);
+    if (!modal) {
+        // No modal on this page — create a lightweight inline toast instead of alert()
+        showToast(title, message, type);
+        return;
+    }
     document.getElementById('modal-title').innerText = title;
     document.getElementById('modal-message').innerText = message;
     modal.style.display = 'flex';
+}
+
+// ── GLOBAL TOAST (fallback for pages without #custom-modal) ──
+// Shows a non-blocking pop-up at the top of the screen
+function showToast(title, message, type = 'success') {
+    const existing = document.getElementById('aminy-global-toast');
+    if (existing) existing.remove();
+
+    const colors = {
+        success: { bg: '#e8f7e8', border: '#3db83a', icon: '✓', iconColor: '#3db83a' },
+        error:   { bg: '#fef2f2', border: '#ef4444', icon: '✕', iconColor: '#ef4444' },
+        warning: { bg: '#fff8ec', border: '#f07623', icon: '!', iconColor: '#f07623' },
+    };
+    const c = colors[type] || colors.success;
+
+    const toast = document.createElement('div');
+    toast.id = 'aminy-global-toast';
+    toast.style.cssText = `
+        position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-12px);
+        background: ${c.bg}; border: 1.5px solid ${c.border}; border-radius: 16px;
+        padding: 14px 18px; display: flex; align-items: flex-start; gap: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.13); z-index: 99999;
+        max-width: 340px; width: calc(100% - 32px);
+        opacity: 0; transition: opacity 0.25s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        font-family: var(--font-body, 'DM Sans', sans-serif);
+    `;
+    toast.innerHTML = `
+        <div style="width:26px;height:26px;border-radius:50%;background:${c.iconColor};color:white;
+            display:flex;align-items:center;justify-content:center;font-size:13px;
+            font-weight:800;flex-shrink:0;margin-top:1px">${c.icon}</div>
+        <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:800;color:#111811;margin-bottom:2px">${escapeHtml(title)}</div>
+            <div style="font-size:13px;color:#445044;line-height:1.4">${escapeHtml(message)}</div>
+        </div>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;
+            color:#8a9a8a;font-size:18px;cursor:pointer;padding:0;line-height:1;flex-shrink:0">×</button>
+    `;
+    document.body.appendChild(toast);
+
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(-50%) translateY(-12px)';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 4000);
 }
 
 // --- AUTHENTICATION ---
@@ -69,7 +126,7 @@ async function detectMyLocation() {
             const data = await res.json();
             locInput.value = data.address.suburb || data.address.city || "Location Found";
         } catch (e) { locInput.value = "Location Detected"; }
-    }, () => { alert("Geolocation failed."); locInput.value = ""; });
+    }, () => { showModal("Location Error", "Geolocation failed. Please type your location manually.", "error"); locInput.value = ""; });
 }
 
 async function handleVettingUpload() {
@@ -78,7 +135,7 @@ async function handleVettingUpload() {
     const conduct = document.getElementById('upload-conduct')?.files[0];
     const locName = document.getElementById('location-name')?.value;
 
-    if (!selfie || !idCard || !conduct) return alert("Please select all three documents.");
+    if (!selfie || !idCard || !conduct) return showModal("Missing Documents", "Please select all three documents before uploading.", "warning");
 
     toggleLoader(true);
     try {
@@ -155,9 +212,9 @@ async function loadPendingHelpers() {
 
 async function updateVettingStatus(id, isApproved) {
     const feedback = document.getElementById(`feedback-${id}`)?.value;
-    if (!isApproved && !feedback) return alert("Please provide a reason for rejection.");
+    if (!isApproved && !feedback) return showModal("Reason Required", "Please provide a reason for rejecting this application.", "warning");
     const { error } = await client.from('profiles').update({ is_vetted: isApproved, rejection_feedback: isApproved ? null : feedback }).eq('id', id);
-    if (error) alert(error.message);
+    if (error) showModal("Update Failed", error.message, "error");
     else {
         document.getElementById(`card-${id}`)?.remove();
         loadDashboardStats();
@@ -199,13 +256,13 @@ async function handleProfileClick() {
 
 async function ensureHelperIsApproved() {
   const { data: { user } } = await client.auth.getUser();
-  if (!user) { alert("Please log in first."); return false; }
+  if (!user) { showModal("Login Required", "Please log in first to continue.", "warning"); return false; }
 
   const { data: profile, error } = await client.from("profiles").select("role, is_vetted").eq("id", user.id).single();
-  if (error || !profile) { alert("Unable to verify your account status."); return false; }
+  if (error || !profile) { showModal("Account Error", "Unable to verify your account status. Please try again.", "error"); return false; }
 
   if (profile.role === "helper" && profile.is_vetted !== true) {
-    alert("Your account is under review. You cannot apply for jobs yet.");
+    showModal("Account Under Review", "Your account is still being reviewed. You cannot apply for jobs yet. You'll be notified once approved.", "warning");
     return false;
   }
   return true;
@@ -355,11 +412,11 @@ async function handlePostJob() {
   if (locHidden) locHidden.value = location;
 
   if (!title || !description || !budget || !category) {
-    alert("Please fill in all fields including category.");
+    showModal("Missing Fields", "Please fill in all fields including category.", "warning");
     return;
   }
   if (!city) {
-    alert("Please select a city for the job location.");
+    showModal("City Required", "Please select a city for the job location.", "warning");
     return;
   }
   toggleLoader(true);
@@ -370,7 +427,7 @@ async function handlePostJob() {
       client_id: user.id, status: "open"
     }]);
     if (error) throw error;
-    alert("Job posted successfully!");
+    showModal("Job Posted! 🎉", "Your job is now live on the marketplace. Helpers can start applying.");
     document.getElementById('job-title').value    = "";
     document.getElementById('job-desc').value     = "";
     document.getElementById('job-budget').value   = "";
@@ -382,7 +439,7 @@ async function handlePostJob() {
     if (areaEl) areaEl.value = "";
     if (locEl)  locEl.value  = "";
     loadMarketplaceJobs?.();
-  } catch (err) { alert(err.message); }
+  } catch (err) { showModal("Post Failed", err.message, "error"); }
   finally { toggleLoader(false); }
 }
 
@@ -458,7 +515,7 @@ async function openChatFromNav() {
 
   const { data: profile } = await client.from("profiles").select("role, is_vetted").eq("id", user.id).single();
   if (profile?.role === "helper" && profile?.is_vetted !== true) {
-    alert("Chat will be available after your account is approved.");
+    showModal("Chat Locked", "Chat will be available after your account is approved by our team.", "warning");
     return;
   }
 
@@ -887,9 +944,9 @@ async function confirmHire() {
         .eq('helper_id', chatActiveThread.recipientId);
     }
 
-    alert(`Hire request sent to ${chatActiveThread.recipientName}!`);
+    showModal("Hire Request Sent! ✅", `Your hire request has been sent to ${chatActiveThread.recipientName}. They'll be notified right away.`);
   } catch (e) {
-    alert('Error: ' + e.message);
+    showModal("Hire Failed", e.message, "error");
   }
 }
 
