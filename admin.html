@@ -5098,38 +5098,43 @@ function renderAdsUpdateForm(currentRows) {
   const rowByChannel = {};
   currentRows.forEach(r => { rowByChannel[r.channel] = r; });
 
-  wrap.innerHTML = `
-    <div style="padding:16px;border-top:1px solid var(--b1)">
-      <div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">
-        <i class="fas fa-edit" style="color:var(--a)"></i> Update This Month's Ad Performance
-      </div>
-      ${channels.map(ch => {
-        const r = rowByChannel[ch] || {};
-        const icon = {meta:'fab fa-facebook',google:'fab fa-google',tiktok:'fab fa-tiktok'}[ch] || 'fas fa-ad';
-        const col  = {meta:'#1877f2',google:'#ea4335',tiktok:'#69c9d0'}[ch] || 'var(--a)';
-        return \`<div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--b1)">
-          <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:10px">
-            <i class="\${icon}" style="color:\${col}"></i> \${ch.charAt(0).toUpperCase()+ch.slice(1)} Ads
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Impressions</div>
-              <input id="ads-\${ch}-impr" type="number" value="\${r.impressions||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Clicks</div>
-              <input id="ads-\${ch}-clicks" type="number" value="\${r.clicks||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Signups</div>
-              <input id="ads-\${ch}-signups" type="number" value="\${r.signups||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Spend (KES)</div>
-              <input id="ads-\${ch}-spend" type="number" value="\${r.spend||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-          </div>
-        </div>\`;
-      }).join('')}
-      <button class="btn btn-primary btn-sm" onclick="saveAdsMetrics()">
-        <i class="fas fa-save"></i> Save All Channels
-      </button>
-      <div style="font-size:11px;color:var(--t3);margin-top:8px">
-        Update weekly from Meta Ads Manager, Google Ads and TikTok Ads dashboards.
-      </div>
-    </div>`;
+  const platIcon = {meta:'fab fa-facebook',google:'fab fa-google',tiktok:'fab fa-tiktok'};
+  const platCol  = {meta:'#1877f2',google:'#ea4335',tiktok:'#69c9d0'};
+
+  const channelForms = channels.map(function(ch) {
+    const r    = rowByChannel[ch] || {};
+    const icon = platIcon[ch] || 'fas fa-ad';
+    const col  = platCol[ch]  || 'var(--a)';
+    const cap  = ch.charAt(0).toUpperCase() + ch.slice(1);
+    return '<div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--b1)">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:10px">' +
+        '<i class="' + icon + '" style="color:' + col + '"></i> ' + cap + ' Ads' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Impressions</div>' +
+          '<input id="ads-' + ch + '-impr" type="number" value="' + (r.impressions||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Clicks</div>' +
+          '<input id="ads-' + ch + '-clicks" type="number" value="' + (r.clicks||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Signups</div>' +
+          '<input id="ads-' + ch + '-signups" type="number" value="' + (r.signups||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Spend (KES)</div>' +
+          '<input id="ads-' + ch + '-spend" type="number" value="' + (r.spend||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+      '</div></div>';
+  }).join('');
+
+  wrap.innerHTML =
+    '<div style="padding:16px;border-top:1px solid var(--b1)">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">' +
+        '<i class="fas fa-edit" style="color:var(--a)"></i> Update This Month\'s Ad Performance' +
+      '</div>' +
+      channelForms +
+      '<button class="btn btn-primary btn-sm" onclick="saveAdsMetrics()">' +
+        '<i class="fas fa-save"></i> Save All Channels' +
+      '</button>' +
+      '<div style="font-size:11px;color:var(--t3);margin-top:8px">' +
+        'Update weekly from Meta Ads Manager, Google Ads and TikTok Ads dashboards.' +
+      '</div>' +
+    '</div>';
 }
 
 async function saveAdsMetrics() {
@@ -10679,38 +10684,43 @@ function renderAdsUpdateForm(currentRows) {
   const rowByChannel = {};
   currentRows.forEach(r => { rowByChannel[r.channel] = r; });
 
-  wrap.innerHTML = `
-    <div style="padding:16px;border-top:1px solid var(--b1)">
-      <div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">
-        <i class="fas fa-edit" style="color:var(--a)"></i> Update This Month's Ad Performance
-      </div>
-      ${channels.map(ch => {
-        const r = rowByChannel[ch] || {};
-        const icon = {meta:'fab fa-facebook',google:'fab fa-google',tiktok:'fab fa-tiktok'}[ch] || 'fas fa-ad';
-        const col  = {meta:'#1877f2',google:'#ea4335',tiktok:'#69c9d0'}[ch] || 'var(--a)';
-        return \`<div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--b1)">
-          <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:10px">
-            <i class="\${icon}" style="color:\${col}"></i> \${ch.charAt(0).toUpperCase()+ch.slice(1)} Ads
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Impressions</div>
-              <input id="ads-\${ch}-impr" type="number" value="\${r.impressions||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Clicks</div>
-              <input id="ads-\${ch}-clicks" type="number" value="\${r.clicks||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Signups</div>
-              <input id="ads-\${ch}-signups" type="number" value="\${r.signups||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Spend (KES)</div>
-              <input id="ads-\${ch}-spend" type="number" value="\${r.spend||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-          </div>
-        </div>\`;
-      }).join('')}
-      <button class="btn btn-primary btn-sm" onclick="saveAdsMetrics()">
-        <i class="fas fa-save"></i> Save All Channels
-      </button>
-      <div style="font-size:11px;color:var(--t3);margin-top:8px">
-        Update weekly from Meta Ads Manager, Google Ads and TikTok Ads dashboards.
-      </div>
-    </div>`;
+  const platIcon = {meta:'fab fa-facebook',google:'fab fa-google',tiktok:'fab fa-tiktok'};
+  const platCol  = {meta:'#1877f2',google:'#ea4335',tiktok:'#69c9d0'};
+
+  const channelForms = channels.map(function(ch) {
+    const r    = rowByChannel[ch] || {};
+    const icon = platIcon[ch] || 'fas fa-ad';
+    const col  = platCol[ch]  || 'var(--a)';
+    const cap  = ch.charAt(0).toUpperCase() + ch.slice(1);
+    return '<div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--b1)">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:10px">' +
+        '<i class="' + icon + '" style="color:' + col + '"></i> ' + cap + ' Ads' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Impressions</div>' +
+          '<input id="ads-' + ch + '-impr" type="number" value="' + (r.impressions||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Clicks</div>' +
+          '<input id="ads-' + ch + '-clicks" type="number" value="' + (r.clicks||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Signups</div>' +
+          '<input id="ads-' + ch + '-signups" type="number" value="' + (r.signups||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Spend (KES)</div>' +
+          '<input id="ads-' + ch + '-spend" type="number" value="' + (r.spend||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+      '</div></div>';
+  }).join('');
+
+  wrap.innerHTML =
+    '<div style="padding:16px;border-top:1px solid var(--b1)">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">' +
+        '<i class="fas fa-edit" style="color:var(--a)"></i> Update This Month\'s Ad Performance' +
+      '</div>' +
+      channelForms +
+      '<button class="btn btn-primary btn-sm" onclick="saveAdsMetrics()">' +
+        '<i class="fas fa-save"></i> Save All Channels' +
+      '</button>' +
+      '<div style="font-size:11px;color:var(--t3);margin-top:8px">' +
+        'Update weekly from Meta Ads Manager, Google Ads and TikTok Ads dashboards.' +
+      '</div>' +
+    '</div>';
 }
 
 async function saveAdsMetrics() {
@@ -16260,38 +16270,43 @@ function renderAdsUpdateForm(currentRows) {
   const rowByChannel = {};
   currentRows.forEach(r => { rowByChannel[r.channel] = r; });
 
-  wrap.innerHTML = `
-    <div style="padding:16px;border-top:1px solid var(--b1)">
-      <div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">
-        <i class="fas fa-edit" style="color:var(--a)"></i> Update This Month's Ad Performance
-      </div>
-      ${channels.map(ch => {
-        const r = rowByChannel[ch] || {};
-        const icon = {meta:'fab fa-facebook',google:'fab fa-google',tiktok:'fab fa-tiktok'}[ch] || 'fas fa-ad';
-        const col  = {meta:'#1877f2',google:'#ea4335',tiktok:'#69c9d0'}[ch] || 'var(--a)';
-        return \`<div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--b1)">
-          <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:10px">
-            <i class="\${icon}" style="color:\${col}"></i> \${ch.charAt(0).toUpperCase()+ch.slice(1)} Ads
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Impressions</div>
-              <input id="ads-\${ch}-impr" type="number" value="\${r.impressions||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Clicks</div>
-              <input id="ads-\${ch}-clicks" type="number" value="\${r.clicks||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Signups</div>
-              <input id="ads-\${ch}-signups" type="number" value="\${r.signups||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Spend (KES)</div>
-              <input id="ads-\${ch}-spend" type="number" value="\${r.spend||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-          </div>
-        </div>\`;
-      }).join('')}
-      <button class="btn btn-primary btn-sm" onclick="saveAdsMetrics()">
-        <i class="fas fa-save"></i> Save All Channels
-      </button>
-      <div style="font-size:11px;color:var(--t3);margin-top:8px">
-        Update weekly from Meta Ads Manager, Google Ads and TikTok Ads dashboards.
-      </div>
-    </div>`;
+  const platIcon = {meta:'fab fa-facebook',google:'fab fa-google',tiktok:'fab fa-tiktok'};
+  const platCol  = {meta:'#1877f2',google:'#ea4335',tiktok:'#69c9d0'};
+
+  const channelForms = channels.map(function(ch) {
+    const r    = rowByChannel[ch] || {};
+    const icon = platIcon[ch] || 'fas fa-ad';
+    const col  = platCol[ch]  || 'var(--a)';
+    const cap  = ch.charAt(0).toUpperCase() + ch.slice(1);
+    return '<div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--b1)">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:10px">' +
+        '<i class="' + icon + '" style="color:' + col + '"></i> ' + cap + ' Ads' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Impressions</div>' +
+          '<input id="ads-' + ch + '-impr" type="number" value="' + (r.impressions||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Clicks</div>' +
+          '<input id="ads-' + ch + '-clicks" type="number" value="' + (r.clicks||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Signups</div>' +
+          '<input id="ads-' + ch + '-signups" type="number" value="' + (r.signups||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Spend (KES)</div>' +
+          '<input id="ads-' + ch + '-spend" type="number" value="' + (r.spend||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+      '</div></div>';
+  }).join('');
+
+  wrap.innerHTML =
+    '<div style="padding:16px;border-top:1px solid var(--b1)">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">' +
+        '<i class="fas fa-edit" style="color:var(--a)"></i> Update This Month\'s Ad Performance' +
+      '</div>' +
+      channelForms +
+      '<button class="btn btn-primary btn-sm" onclick="saveAdsMetrics()">' +
+        '<i class="fas fa-save"></i> Save All Channels' +
+      '</button>' +
+      '<div style="font-size:11px;color:var(--t3);margin-top:8px">' +
+        'Update weekly from Meta Ads Manager, Google Ads and TikTok Ads dashboards.' +
+      '</div>' +
+    '</div>';
 }
 
 async function saveAdsMetrics() {
@@ -21841,38 +21856,43 @@ function renderAdsUpdateForm(currentRows) {
   const rowByChannel = {};
   currentRows.forEach(r => { rowByChannel[r.channel] = r; });
 
-  wrap.innerHTML = `
-    <div style="padding:16px;border-top:1px solid var(--b1)">
-      <div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">
-        <i class="fas fa-edit" style="color:var(--a)"></i> Update This Month's Ad Performance
-      </div>
-      ${channels.map(ch => {
-        const r = rowByChannel[ch] || {};
-        const icon = {meta:'fab fa-facebook',google:'fab fa-google',tiktok:'fab fa-tiktok'}[ch] || 'fas fa-ad';
-        const col  = {meta:'#1877f2',google:'#ea4335',tiktok:'#69c9d0'}[ch] || 'var(--a)';
-        return \`<div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--b1)">
-          <div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:10px">
-            <i class="\${icon}" style="color:\${col}"></i> \${ch.charAt(0).toUpperCase()+ch.slice(1)} Ads
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Impressions</div>
-              <input id="ads-\${ch}-impr" type="number" value="\${r.impressions||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Clicks</div>
-              <input id="ads-\${ch}-clicks" type="number" value="\${r.clicks||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Signups</div>
-              <input id="ads-\${ch}-signups" type="number" value="\${r.signups||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-            <div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Spend (KES)</div>
-              <input id="ads-\${ch}-spend" type="number" value="\${r.spend||0}" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>
-          </div>
-        </div>\`;
-      }).join('')}
-      <button class="btn btn-primary btn-sm" onclick="saveAdsMetrics()">
-        <i class="fas fa-save"></i> Save All Channels
-      </button>
-      <div style="font-size:11px;color:var(--t3);margin-top:8px">
-        Update weekly from Meta Ads Manager, Google Ads and TikTok Ads dashboards.
-      </div>
-    </div>`;
+  const platIcon = {meta:'fab fa-facebook',google:'fab fa-google',tiktok:'fab fa-tiktok'};
+  const platCol  = {meta:'#1877f2',google:'#ea4335',tiktok:'#69c9d0'};
+
+  const channelForms = channels.map(function(ch) {
+    const r    = rowByChannel[ch] || {};
+    const icon = platIcon[ch] || 'fas fa-ad';
+    const col  = platCol[ch]  || 'var(--a)';
+    const cap  = ch.charAt(0).toUpperCase() + ch.slice(1);
+    return '<div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--b1)">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--t1);margin-bottom:10px">' +
+        '<i class="' + icon + '" style="color:' + col + '"></i> ' + cap + ' Ads' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Impressions</div>' +
+          '<input id="ads-' + ch + '-impr" type="number" value="' + (r.impressions||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Clicks</div>' +
+          '<input id="ads-' + ch + '-clicks" type="number" value="' + (r.clicks||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Signups</div>' +
+          '<input id="ads-' + ch + '-signups" type="number" value="' + (r.signups||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+        '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Spend (KES)</div>' +
+          '<input id="ads-' + ch + '-spend" type="number" value="' + (r.spend||0) + '" class="form-input" style="width:100%;padding:6px 8px;font-size:12px"></div>' +
+      '</div></div>';
+  }).join('');
+
+  wrap.innerHTML =
+    '<div style="padding:16px;border-top:1px solid var(--b1)">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">' +
+        '<i class="fas fa-edit" style="color:var(--a)"></i> Update This Month\'s Ad Performance' +
+      '</div>' +
+      channelForms +
+      '<button class="btn btn-primary btn-sm" onclick="saveAdsMetrics()">' +
+        '<i class="fas fa-save"></i> Save All Channels' +
+      '</button>' +
+      '<div style="font-size:11px;color:var(--t3);margin-top:8px">' +
+        'Update weekly from Meta Ads Manager, Google Ads and TikTok Ads dashboards.' +
+      '</div>' +
+    '</div>';
 }
 
 async function saveAdsMetrics() {
