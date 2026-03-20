@@ -353,16 +353,6 @@ async function loadTrendingJobs() {
   } catch { container.innerHTML = "<p class='muted'>Could not load jobs</p>"; }
 }
 
-function renderTrendingJobs(jobs) {
-  const container = document.getElementById("trending-jobs-container");
-  container.innerHTML = jobs.map(job => `
-    <div class="trending-job-card" onclick="openJobFromSearch('${job.id}')">
-      <h4>${job.title || "Untitled Job"}</h4>
-      <p>${job.description ? job.description.slice(0, 60) + "..." : ""}</p>
-      <span class="budget">${job.budget || "Budget not set"}</span>
-    </div>`).join("");
-}
-
 // --- MARKETPLACE JOBS ---
 let allMarketplaceJobs = [];
 
@@ -419,10 +409,6 @@ async function handlePostJob() {
   const area = document.getElementById('job-area')?.value.trim() || '';
   const location = city ? (area ? `${area}, ${city}` : city) : '';
 
-  // Write combined value into hidden field (keeps B-01 fix intact)
-  const locHidden = document.getElementById('job-location');
-  if (locHidden) locHidden.value = location;
-
   if (!title || !description || !budget || !category) {
     showModal("Missing Fields", "Please fill in all fields including category.", "warning");
     return;
@@ -446,10 +432,8 @@ async function handlePostJob() {
     document.getElementById('job-category').value = "";
     const cityEl = document.getElementById('job-city');
     const areaEl = document.getElementById('job-area');
-    const locEl  = document.getElementById('job-location');
     if (cityEl) cityEl.value = "";
     if (areaEl) areaEl.value = "";
-    if (locEl)  locEl.value  = "";
     loadMarketplaceJobs?.();
   } catch (err) { showModal("Post Failed", err.message, "error"); }
   finally { toggleLoader(false); }
