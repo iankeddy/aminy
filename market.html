@@ -649,6 +649,21 @@ body {
   </div>
 </div>
 
+<!-- CUSTOM MODAL (used by app.js showModal()) -->
+<div id="custom-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);
+  z-index:9000;align-items:center;justify-content:center;padding:20px"
+  onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:white;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;
+    box-shadow:0 12px 48px rgba(0,0,0,0.18);font-family:'DM Sans',sans-serif;text-align:center">
+    <h3 id="modal-title" style="font-family:'Outfit',sans-serif;font-weight:800;font-size:18px;
+      color:#111811;margin-bottom:8px"></h3>
+    <p id="modal-message" style="font-size:14px;color:#445044;line-height:1.5;margin-bottom:20px"></p>
+    <button onclick="document.getElementById('custom-modal').style.display='none'"
+      style="background:#3db83a;color:white;border:none;border-radius:30px;padding:11px 32px;
+      font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%">OK</button>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast-wrap" id="toast-wrap" style="display:none"></div>
 
