@@ -1530,6 +1530,109 @@ select.input-sm{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 
     </section>
 
+    <!-- COMMISSION DASHBOARD -->
+    <section class="page" id="page-commission">
+      <div class="section-header">
+        <div><div class="section-title">Commission Dashboard</div><div class="section-desc">Aminy's 20% earnings — total revenue, pending payouts and monthly breakdown</div></div>
+        <button class="btn btn-primary btn-sm" onclick="loadCommission()"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr)" id="commission-metrics"></div>
+
+      <!-- Monthly breakdown -->
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-header">
+          <div><div class="panel-title"><i class="fas fa-chart-bar" style="color:var(--a)"></i> Monthly Commission Breakdown</div>
+          <div class="panel-subtitle">Commission earned per month (KES)</div></div>
+        </div>
+        <div class="panel-body"><div class="chart-wrap"><canvas id="commissionChart"></canvas></div></div>
+      </div>
+
+      <!-- Commission per job table -->
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-header">
+          <div><div class="panel-title"><i class="fas fa-receipt" style="color:var(--a)"></i> Commission Per Transaction</div>
+          <div class="panel-subtitle">Every completed job and Aminy's cut</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Job</th><th>Client</th><th>Helper</th>
+              <th>Job Amount</th><th>Commission (20%)</th><th>Helper Got (80%)</th>
+              <th>M-Pesa Ref</th><th>Date</th>
+            </tr></thead>
+            <tbody id="commission-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Withdrawal summary -->
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-header">
+          <div><div class="panel-title"><i class="fas fa-money-bill-wave" style="color:var(--a)"></i> Withdrawal Summary</div>
+          <div class="panel-subtitle">Helper payouts — completed vs pending</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Helper</th><th>Amount</th><th>M-Pesa Phone</th><th>Status</th><th>M-Pesa Ref</th><th>Requested</th><th>Completed</th></tr></thead>
+            <tbody id="commission-withdrawals-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- DISPUTE MANAGEMENT -->
+    <section class="page" id="page-disputes">
+      <div class="section-header">
+        <div><div class="section-title">Dispute Management</div><div class="section-desc">Job complaints — review evidence and decide to refund escrow or release to helper</div></div>
+        <button class="btn btn-primary btn-sm" onclick="loadDisputes()"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+
+      <!-- Dispute metrics -->
+      <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr)" id="dispute-metrics"></div>
+
+      <!-- Filter chips -->
+      <div class="chips" style="margin:16px 0 12px">
+        <div class="chip active" onclick="filterDisputes('all',this)">All</div>
+        <div class="chip" onclick="filterDisputes('open',this)">Open</div>
+        <div class="chip" onclick="filterDisputes('under_review',this)">Under Review</div>
+        <div class="chip" onclick="filterDisputes('resolved_refund',this)">Refunded</div>
+        <div class="chip" onclick="filterDisputes('resolved_release',this)">Released</div>
+        <div class="chip" onclick="filterDisputes('closed',this)">Closed</div>
+      </div>
+
+      <!-- Disputes list -->
+      <div id="disputes-list"></div>
+
+      <!-- Resolve Modal -->
+      <div class="modal-overlay" id="resolve-modal">
+        <div class="modal-card" style="max-width:480px;width:100%;background:var(--card);border-radius:var(--r);padding:28px;border:1px solid var(--b1)">
+          <div style="font-family:var(--fh);font-weight:800;font-size:17px;color:var(--t1);margin-bottom:4px" id="resolve-title">Resolve Dispute</div>
+          <div style="font-size:12px;color:var(--t3);margin-bottom:16px" id="resolve-subtitle"></div>
+
+          <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:14px;font-size:13px;color:var(--t2);line-height:1.6" id="resolve-summary"></div>
+
+          <div style="font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Resolution Note</div>
+          <textarea id="resolve-note" rows="3" placeholder="Explain your decision (shown to both parties)…"
+            style="width:100%;padding:10px 12px;background:var(--bg);border:1.5px solid var(--b1);border-radius:10px;font-size:13px;color:var(--t1);resize:none;font-family:inherit;outline:none"></textarea>
+
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button class="btn btn-ghost" onclick="closeModal('resolve-modal')" style="flex:1">Cancel</button>
+            <button class="btn" style="flex:1;background:#ef4444;color:white" id="btn-refund-escrow" onclick="resolveDispute('refund')">
+              <i class="fas fa-rotate-left"></i> Refund Client
+            </button>
+            <button class="btn btn-primary" style="flex:1" id="btn-release-escrow" onclick="resolveDispute('release')">
+              <i class="fas fa-check"></i> Pay Helper
+            </button>
+          </div>
+          <div style="font-size:11px;color:var(--t3);margin-top:10px;text-align:center">
+            This action is irreversible. Both parties will be notified.
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- REVIEWS -->
     <section class="page" id="page-reviews">
       <div class="section-header"><div><div class="section-title">Reviews</div><div class="section-desc">Platform quality monitoring</div></div></div>
@@ -2273,10 +2376,14 @@ const ROLE_BADGE_CLASS = {
 
 // What each role can access — ordered list defines sidebar order
 const ROLE_PERMISSIONS = {
-  super_admin:   ['overview','vetting','helpers','clients','jobs','applications','payments','reviews','badges','reports','notifications','activity','admin-management','settings','campaigns','social','referrals','promos','push-campaigns','influencers','seo','paid-ads','retention','market-health'],
-  ops_admin:     ['overview','vetting','helpers','jobs','applications','reports','activity','settings','campaigns','paid-ads','seo','retention'],
-  support_admin: ['overview','clients','reviews','notifications','badges','activity','settings','social','referrals','promos','push-campaigns'],
-  finance_admin: ['overview','payments','reports','activity','settings']
+  // Super Admin — full platform access
+  super_admin:   ['overview','vetting','helpers','clients','jobs','applications','payments','commission','disputes','reviews','badges','reports','notifications','activity','admin-management','settings','campaigns','social','referrals','promos','push-campaigns','influencers','seo','paid-ads','retention','market-health'],
+  // Operations Admin — helper/job management + vetting. No financials.
+  ops_admin:     ['overview','vetting','helpers','clients','jobs','applications','disputes','reports','activity','settings','campaigns','paid-ads','seo','retention'],
+  // Support Admin — client-facing quality control. Can view disputes but not refund.
+  support_admin: ['overview','clients','reviews','notifications','badges','disputes','activity','settings','social','referrals','promos','push-campaigns'],
+  // Finance Admin — full financial visibility + refund authority
+  finance_admin: ['overview','payments','commission','disputes','reports','activity','settings']
 };
 
 // Sidebar nav definition — each item maps to a page
@@ -2287,7 +2394,9 @@ const NAV_ITEMS = [
   { section:'Operations',  key:'clients',           icon:'fa-users',           label:'Clients' },
   { section:'Operations',  key:'jobs',              icon:'fa-briefcase',       label:'Jobs' },
   { section:'Operations',  key:'applications',      icon:'fa-file-alt',        label:'Applications' },
-  { section:'Finance',     key:'payments',          icon:'fa-credit-card',     label:'Payments' },
+  { section:'Finance',     key:'payments',          icon:'fa-credit-card',     label:'Payments',     },
+  { section:'Finance',     key:'commission',        icon:'fa-coins',           label:'Commission',   },
+  { section:'Finance',     key:'disputes',          icon:'fa-balance-scale',   label:'Disputes',     badge:'disputes-badge' },
   { section:'Quality',     key:'reviews',           icon:'fa-star',            label:'Reviews' },
   { section:'Quality',     key:'badges',            icon:'fa-award',           label:'Badges' },
   { section:'Analytics',   key:'reports',           icon:'fa-chart-bar',       label:'Reports' },
@@ -2505,7 +2614,8 @@ async function bootDashboard() {
   // ── Load data — allSettled so one failure never blocks others ─
   await Promise.allSettled([
     loadOverview(), loadVettingQueue(),
-    loadHelpers(), loadClients(), loadJobs(), loadBookings()
+    loadHelpers(), loadClients(), loadJobs(), loadBookings(),
+    loadDisputes()   // pre-load so badge shows on boot
   ]);
 
   // ── Charts ───────────────────────────────────────────────────
@@ -3577,6 +3687,8 @@ const pageMeta = {
   jobs:             ['Jobs & Tasks',      'Monitor all platform jobs'],
   applications:     ['Applications',      'Helper applications and booking status'],
   payments:         ['Payments & Finance', 'Escrow, commissions, wallets and withdrawals'],
+  commission:       ['Commission Dashboard', 'Aminy earnings, payouts and revenue breakdown'],
+  disputes:         ['Dispute Management', 'Job complaints and escrow refund decisions'],
   reviews:          ['Reviews',           'Platform quality monitoring'],
   badges:           ['Helper Badges',     'Achievement system overview'],
   reports:          ['Reports',           'Analytics and platform metrics'],
@@ -3621,6 +3733,8 @@ function navigate(pageKey) {
 
   // Page-specific loaders
   if(pageKey==='payments')          loadFinance();
+  if(pageKey==='commission')        loadCommission();
+  if(pageKey==='disputes')          loadDisputes();
   if(pageKey==='reviews')           loadReviews();
   if(pageKey==='badges')            loadBadgesPage();
   if(pageKey==='reports')           loadReportsPage();
@@ -3650,6 +3764,383 @@ function showToast(msg, type='green') {
   setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(8px)'; t.style.transition='all 0.3s'; setTimeout(()=>t.remove(),300); },3200);
 }
 
+
+
+// ═══════════════════════════════════════════════════════════
+// COMMISSION DASHBOARD
+// ═══════════════════════════════════════════════════════════
+
+let allCommissionData = [], allWithdrawalData = [];
+
+async function loadCommission() {
+  try {
+    // Released payments = commission earned
+    const { data: payments } = await db.from('payments')
+      .select(`
+        id, amount, commission_amount, helper_amount, mpesa_receipt_number, released_at, created_at,
+        client:profiles!user_id(full_name, email),
+        booking:bookings!booking_id(
+          helper:profiles!helper_id(full_name),
+          job:jobs!job_id(title)
+        )
+      `)
+      .eq('escrow_status', 'released')
+      .order('released_at', { ascending: false });
+    allCommissionData = payments || [];
+
+    // All withdrawals
+    const { data: withdrawals } = await db.from('withdrawals')
+      .select(`id, amount, phone_number, status, mpesa_ref, requested_at, completed_at, helper:profiles!helper_id(full_name)`)
+      .order('requested_at', { ascending: false });
+    allWithdrawalData = withdrawals || [];
+
+    renderCommissionMetrics();
+    renderCommissionTable();
+    renderCommissionWithdrawals();
+    renderCommissionChart();
+
+  } catch(e) { console.warn('loadCommission:', e.message); }
+}
+
+function renderCommissionMetrics() {
+  const totalComm     = allCommissionData.reduce((s,p) => s + Number(p.commission_amount||0), 0);
+  const totalReleased = allCommissionData.reduce((s,p) => s + Number(p.amount||0), 0);
+  const totalHelper   = allCommissionData.reduce((s,p) => s + Number(p.helper_amount||0), 0);
+  const pendingWd     = allWithdrawalData.filter(w => w.status !== 'completed').reduce((s,w) => s + Number(w.amount||0), 0);
+  const completedWd   = allWithdrawalData.filter(w => w.status === 'completed').reduce((s,w) => s + Number(w.amount||0), 0);
+
+  const el = document.getElementById('commission-metrics');
+  if(!el) return;
+  el.innerHTML = `
+    ${metricCard('purple','fa-coins','KES '+totalComm.toLocaleString(),'Total Commission Earned')}
+    ${metricCard('green','fa-briefcase','KES '+totalReleased.toLocaleString(),'Total Job Value Released')}
+    ${metricCard('blue','fa-wallet','KES '+totalHelper.toLocaleString(),'Paid to Helpers')}
+    ${metricCard('orange','fa-hourglass-half','KES '+pendingWd.toLocaleString(),'Pending Withdrawals')}
+  `;
+}
+
+function renderCommissionTable() {
+  const tbody = document.getElementById('commission-table');
+  if(!tbody) return;
+  if(!allCommissionData.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">💼</div><h4>No completed jobs yet</h4><p>Commission is earned when escrow is released after job completion.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allCommissionData.map(p => {
+    const job    = p.booking?.job?.title    || '—';
+    const client = p.client?.full_name      || p.client?.email || '—';
+    const helper = p.booking?.helper?.full_name || '—';
+    return `<tr>
+      <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${job}</td>
+      <td style="font-size:12px">${client}</td>
+      <td style="font-size:12px">${helper}</td>
+      <td style="font-weight:700;color:var(--t1)">KES ${Number(p.amount||0).toLocaleString()}</td>
+      <td style="font-weight:800;color:var(--violet)">KES ${Number(p.commission_amount||0).toLocaleString()}</td>
+      <td style="color:var(--a)">KES ${Number(p.helper_amount||0).toLocaleString()}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--a)">${p.mpesa_receipt_number || '—'}</td>
+      <td class="td-muted">${formatDate(p.released_at || p.created_at)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCommissionWithdrawals() {
+  const tbody = document.getElementById('commission-withdrawals-table');
+  if(!tbody) return;
+  if(!allWithdrawalData.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:20px"><div class="empty-icon">💸</div><h4>No withdrawals yet</h4></div></td></tr>`;
+    return;
+  }
+  const wdBadge = s => ({
+    pending:    '<span class="badge badge-grey">Pending</span>',
+    processing: '<span class="badge badge-orange">Processing</span>',
+    completed:  '<span class="badge badge-green">Completed</span>',
+    failed:     '<span class="badge badge-red">Failed</span>',
+  }[s] || `<span class="badge badge-grey">${s}</span>`);
+
+  tbody.innerHTML = allWithdrawalData.map(w => `
+    <tr>
+      <td style="font-size:12px;font-weight:600">${w.helper?.full_name || '—'}</td>
+      <td style="font-weight:700;color:var(--green-dark)">KES ${Number(w.amount||0).toLocaleString()}</td>
+      <td style="font-family:monospace;font-size:11px">${w.phone_number || '—'}</td>
+      <td>${wdBadge(w.status)}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--a)">${w.mpesa_ref || '—'}</td>
+      <td class="td-muted">${formatDate(w.requested_at)}</td>
+      <td class="td-muted">${w.completed_at ? formatDate(w.completed_at) : '—'}</td>
+    </tr>`).join('');
+}
+
+function renderCommissionChart() {
+  const ctx = document.getElementById('commissionChart');
+  if(!ctx) return;
+
+  // Group by month
+  const byMonth = {};
+  for(const p of allCommissionData) {
+    const d = new Date(p.released_at || p.created_at);
+    const key = d.toLocaleDateString('en-KE', { month:'short', year:'numeric' });
+    byMonth[key] = (byMonth[key] || 0) + Number(p.commission_amount || 0);
+  }
+  const labels = Object.keys(byMonth).slice(-6);
+  const values = labels.map(l => byMonth[l]);
+
+  if(window._commChart) window._commChart.destroy();
+  window._commChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Commission (KES)',
+        data: values,
+        backgroundColor: 'rgba(139,92,246,0.7)',
+        borderColor: '#8b5cf6',
+        borderWidth: 1.5,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color:'rgba(255,255,255,0.04)' }, ticks: { color:'#4a5e70', callback: v => 'KES '+v.toLocaleString() } },
+        x: { grid: { display:false }, ticks: { color:'#4a5e70' } }
+      }
+    }
+  });
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// DISPUTE MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+
+let allDisputes = [], activeDisputeId = null;
+
+async function loadDisputes() {
+  try {
+    const { data, error } = await db.from('disputes')
+      .select(`
+        id, reason, description, status, resolution_note, created_at, resolved_at,
+        raised_by_profile:profiles!raised_by(full_name, email, role),
+        against_profile:profiles!against(full_name, email, role),
+        booking:bookings!booking_id(
+          id, status,
+          job:jobs!job_id(title, budget),
+          payment:payments(amount, escrow_status, mpesa_receipt_number)
+        ),
+        resolver:profiles!resolved_by(full_name)
+      `)
+      .order('created_at', { ascending: false });
+
+    if(error) throw error;
+    allDisputes = data || [];
+
+    // Update badge
+    const openCount = allDisputes.filter(d => d.status === 'open' || d.status === 'under_review').length;
+    const badge = document.getElementById('disputes-badge');
+    if(badge) { badge.textContent = openCount; badge.style.display = openCount ? 'flex' : 'none'; }
+
+    renderDisputeMetrics();
+    renderDisputesList(allDisputes);
+
+  } catch(e) { console.warn('loadDisputes:', e.message); }
+}
+
+function renderDisputeMetrics() {
+  const open       = allDisputes.filter(d => d.status === 'open').length;
+  const reviewing  = allDisputes.filter(d => d.status === 'under_review').length;
+  const refunded   = allDisputes.filter(d => d.status === 'resolved_refund').length;
+  const released   = allDisputes.filter(d => d.status === 'resolved_release').length;
+
+  const el = document.getElementById('dispute-metrics');
+  if(!el) return;
+  el.innerHTML = `
+    ${metricCard('red','fa-exclamation-circle',open,'Open Disputes')}
+    ${metricCard('orange','fa-search',reviewing,'Under Review')}
+    ${metricCard('blue','fa-rotate-left',refunded,'Refunded to Client')}
+    ${metricCard('green','fa-check-circle',released,'Released to Helper')}
+  `;
+}
+
+function filterDisputes(filter, el) {
+  el.closest('.chips').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const filtered = filter === 'all' ? allDisputes : allDisputes.filter(d => d.status === filter);
+  renderDisputesList(filtered);
+}
+
+const disputeStatusBadge = s => ({
+  open:             '<span class="badge badge-red">Open</span>',
+  under_review:     '<span class="badge badge-orange">Under Review</span>',
+  resolved_refund:  '<span class="badge badge-blue">Refunded</span>',
+  resolved_release: '<span class="badge badge-green">Released</span>',
+  closed:           '<span class="badge badge-grey">Closed</span>',
+}[s] || `<span class="badge badge-grey">${s}</span>`);
+
+function renderDisputesList(disputes) {
+  const container = document.getElementById('disputes-list');
+  if(!container) return;
+  if(!disputes.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚖️</div><h4>No disputes found</h4><p>Disputes raised by clients or helpers will appear here.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = disputes.map(d => {
+    const raisedBy  = d.raised_by_profile?.full_name || d.raised_by_profile?.email || 'Unknown';
+    const against   = d.against_profile?.full_name   || d.against_profile?.email   || 'Unknown';
+    const jobTitle  = d.booking?.job?.title           || 'Unknown Job';
+    const jobBudget = d.booking?.job?.budget          || '—';
+    const payment   = Array.isArray(d.booking?.payment) ? d.booking.payment[0] : d.booking?.payment;
+    const amount    = payment?.amount ? 'KES ' + Number(payment.amount).toLocaleString() : '—';
+    const escrow    = payment?.escrow_status || 'unknown';
+    const isOpen    = d.status === 'open' || d.status === 'under_review';
+
+    // Only show action buttons if admin can refund (finance/super) and escrow is held
+    const canRefund = canAccess(adminRole, 'payments');
+    const escrowHeld = escrow === 'held';
+
+    return `
+      <div class="panel-card" style="margin-bottom:12px;border-left:3px solid ${d.status==='open'?'#ef4444':d.status==='under_review'?'#f07623':'#3db83a'}">
+        <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+              ${disputeStatusBadge(d.status)}
+              <span style="font-family:var(--fh);font-weight:800;font-size:14px;color:var(--t1)">${jobTitle}</span>
+              <span style="font-size:12px;color:var(--t3)">${jobBudget}</span>
+            </div>
+            <div style="font-size:13px;color:var(--t2);margin-bottom:4px">
+              <strong>Raised by:</strong> ${raisedBy} (${d.raised_by_profile?.role || '?'})
+              &nbsp;→&nbsp;
+              <strong>Against:</strong> ${against}
+            </div>
+            <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px">
+              ${d.reason}
+            </div>
+            ${d.description ? `<div style="font-size:12px;color:var(--t3);line-height:1.5;margin-bottom:6px">${d.description}</div>` : ''}
+            <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--t3)">
+              <span>💳 Escrow: <strong style="color:${escrowHeld?'#f07623':'#3db83a'}">${amount} (${escrow})</strong></span>
+              <span>📅 ${timeAgo(d.created_at)}</span>
+              ${d.resolver ? `<span>✅ Resolved by ${d.resolver.full_name}</span>` : ''}
+            </div>
+            ${d.resolution_note ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(61,184,58,0.08);border-radius:8px;font-size:12px;color:var(--t2)"><i class="fas fa-check-circle" style="color:var(--a)"></i> <em>${d.resolution_note}</em></div>` : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+            ${isOpen ? `
+              <button class="btn btn-ghost btn-sm" onclick="markUnderReview('${d.id}')">
+                <i class="fas fa-search"></i> Review
+              </button>` : ''}
+            ${isOpen && canRefund && escrowHeld ? `
+              <button class="btn btn-sm" style="background:#ef4444;color:white" onclick="openResolveModal('${d.id}','refund')">
+                <i class="fas fa-rotate-left"></i> Refund Client
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="openResolveModal('${d.id}','release')">
+                <i class="fas fa-check"></i> Pay Helper
+              </button>` : ''}
+            ${isOpen && !escrowHeld ? `
+              <button class="btn btn-ghost btn-sm" onclick="closeDispute('${d.id}')">
+                <i class="fas fa-times"></i> Close
+              </button>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function markUnderReview(disputeId) {
+  try {
+    await db.from('disputes').update({ status: 'under_review' }).eq('id', disputeId);
+    await logAction('dispute_review', 'dispute', disputeId, { status: 'under_review' });
+    loadDisputes();
+    showToast('Dispute marked as under review');
+  } catch(e) { showToast('Error: ' + e.message, 'red'); }
+}
+
+async function closeDispute(disputeId) {
+  try {
+    await db.from('disputes').update({ status: 'closed', resolved_by: currentUser.id, resolved_at: new Date().toISOString() }).eq('id', disputeId);
+    await logAction('dispute_close', 'dispute', disputeId);
+    loadDisputes();
+    showToast('Dispute closed');
+  } catch(e) { showToast('Error: ' + e.message, 'red'); }
+}
+
+function openResolveModal(disputeId, defaultAction) {
+  activeDisputeId = disputeId;
+  const d = allDisputes.find(x => x.id === disputeId);
+  if(!d) return;
+
+  const jobTitle  = d.booking?.job?.title || 'Unknown Job';
+  const payment   = Array.isArray(d.booking?.payment) ? d.booking.payment[0] : d.booking?.payment;
+  const amount    = payment?.amount ? Number(payment.amount).toLocaleString() : '—';
+  const commission = payment?.amount ? Math.round(Number(payment.amount) * 0.2).toLocaleString() : '—';
+  const helperShare = payment?.amount ? Math.round(Number(payment.amount) * 0.8).toLocaleString() : '—';
+
+  document.getElementById('resolve-title').textContent  = `Resolve: ${jobTitle}`;
+  document.getElementById('resolve-subtitle').textContent = `Dispute opened ${timeAgo(d.created_at)}`;
+  document.getElementById('resolve-summary').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+      <div><span style="color:var(--t3)">Total in Escrow</span><br><strong style="font-size:15px">KES ${amount}</strong></div>
+      <div><span style="color:var(--t3)">Raised by</span><br><strong>${d.raised_by_profile?.full_name || '—'}</strong></div>
+      <div><span style="color:var(--t3)">Refund Client gets</span><br><strong style="color:#ef4444">KES ${amount}</strong></div>
+      <div><span style="color:var(--t3)">Helper gets (if released)</span><br><strong style="color:var(--a)">KES ${helperShare} <span style="color:var(--t3);font-size:10px">(after 20% comm)</span></strong></div>
+    </div>
+  `;
+  document.getElementById('resolve-note').value = '';
+
+  // Highlight default action
+  document.getElementById('btn-refund-escrow').style.opacity  = defaultAction === 'refund'  ? '1' : '0.6';
+  document.getElementById('btn-release-escrow').style.opacity = defaultAction === 'release' ? '1' : '0.6';
+
+  document.getElementById('resolve-modal').classList.add('open');
+}
+
+async function resolveDispute(action) {
+  const note = document.getElementById('resolve-note').value.trim();
+  if(!note) { showToast('Please add a resolution note', 'orange'); return; }
+  if(!activeDisputeId) return;
+
+  try {
+    if(action === 'refund') {
+      // Call DB function to atomically refund
+      const { data, error } = await db.rpc('admin_refund_escrow', {
+        p_dispute_id: activeDisputeId,
+        p_admin_id:   currentUser.id,
+        p_resolution: note
+      });
+      if(error) throw error;
+      if(!data?.success) throw new Error(data?.error || 'Refund failed');
+      showToast('Escrow refunded to client ✅');
+
+    } else if(action === 'release') {
+      // Release escrow to helper using existing release_escrow function
+      const d = allDisputes.find(x => x.id === activeDisputeId);
+      const bookingId = d?.booking?.id;
+      if(!bookingId) throw new Error('Booking not found');
+
+      const { data, error } = await db.rpc('release_escrow', {
+        p_booking_id: bookingId,
+        p_client_id:  d.booking?.client_id || currentUser.id
+      });
+      if(error && !error.message.includes('client_id')) throw error;
+
+      // Update dispute as resolved_release
+      await db.from('disputes').update({
+        status:          'resolved_release',
+        resolution_note: note,
+        resolved_by:     currentUser.id,
+        resolved_at:     new Date().toISOString()
+      }).eq('id', activeDisputeId);
+
+      showToast('Escrow released to helper ✅');
+    }
+
+    await logAction('dispute_resolve_' + action, 'dispute', activeDisputeId, { note });
+    closeModal('resolve-modal');
+    loadDisputes();
+    // Also refresh finance data if on that page
+    if(allEscrow.length) loadFinance();
+
+  } catch(e) { showToast('Error: ' + e.message, 'red'); }
+}
 
 
 // ═══════════════════════════════════════════════════════════
